@@ -86,3 +86,5 @@ jobs:
           git add app/api/score/route.ts
           git commit -m "Allow friendly matches to start scoring without tournament" || exit 0
           git push
+
+# trigger-2
