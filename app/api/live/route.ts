@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { deliveries, liveSessions, matches, players, scoringHandoffs, teams, tournamentScorers, tournaments } from "@/db/schema";
 import { getChatGPTUser } from "@/app/chatgpt-auth";
@@ -50,10 +50,19 @@ export async function DELETE(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const token = new URL(request.url).searchParams.get("token") ?? "";
+  const url = new URL(request.url);
+  const token = url.searchParams.get("token") ?? "";
+  const matchId = Number(url.searchParams.get("matchId") ?? 0);
   const db = getDb();
-  const [session] = await db.select().from(liveSessions).where(eq(liveSessions.token, token)).limit(1);
-  if (!session) return Response.json({ error: "Live stream not found" }, { status: 404 });
+
+  let session: typeof liveSessions.$inferSelect | undefined;
+  if (token) {
+    [session] = await db.select().from(liveSessions).where(eq(liveSessions.token, token)).limit(1);
+  } else if (matchId) {
+    [session] = await db.select().from(liveSessions).where(and(eq(liveSessions.matchId, matchId), eq(liveSessions.active, true))).orderBy(desc(liveSessions.id)).limit(1);
+  }
+  if (!session) return Response.json({ error: "No live broadcast is active for this match" }, { status: 404 });
+
   const [match] = await db.select().from(matches).where(eq(matches.id, session.matchId)).limit(1);
   if (!match) return Response.json({ error: "Match not found" }, { status: 404 });
   const [teamRows, playerRows, deliveryRows] = await Promise.all([
@@ -64,6 +73,7 @@ export async function GET(request: Request) {
   const [tournament] = match.tournamentId ? await db.select().from(tournaments).where(eq(tournaments.id, match.tournamentId)).limit(1) : [];
   const currentPlayerIds = new Set([match.strikerId, match.nonStrikerId, match.bowlerId].filter((id): id is number => typeof id === "number"));
   return Response.json({
+    token: session.token,
     active: session.active,
     match,
     tournament,
