@@ -115,6 +115,9 @@ export const matches = pgTable("matches", {
   innings: integer("innings").notNull().default(1),
   firstInningsRuns: integer("first_innings_runs"),
   firstInningsWickets: integer("first_innings_wickets"),
+  firstInningsBalls: integer("first_innings_balls"),
+  firstInningsBattingTeamId: integer("first_innings_batting_team_id").references(() => teams.id),
+  winnerTeamId: integer("winner_team_id").references(() => teams.id),
   result: text("result"),
   tieResolution: text("tie_resolution"),
   superOverFirstRuns: integer("super_over_first_runs"),
@@ -138,6 +141,36 @@ export const deliveries = pgTable("deliveries", {
   wicketType: text("wicket_type"),
   playerOutId: integer("player_out_id").references(() => players.id),
   wicketCredit: boolean("wicket_credit").notNull().default(false),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const tournamentGroups = pgTable("tournament_groups", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id").notNull().references(() => tournaments.id),
+  name: text("name").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const tournamentGroupTeams = pgTable("tournament_group_teams", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id").notNull().references(() => tournaments.id),
+  groupId: integer("group_id").notNull().references(() => tournamentGroups.id),
+  teamId: integer("team_id").notNull().references(() => teams.id),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const matchMvpOverrides = pgTable("match_mvp_overrides", {
+  id: serial("id").primaryKey(),
+  matchId: integer("match_id").notNull().references(() => matches.id),
+  playerId: integer("player_id").notNull().references(() => players.id),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const tournamentMvpOverrides = pgTable("tournament_mvp_overrides", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id").notNull().references(() => tournaments.id),
+  playerId: integer("player_id").notNull().references(() => players.id),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
