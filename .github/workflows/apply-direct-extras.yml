@@ -13,24 +13,52 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Replace extras menu with direct buttons
+      - name: Apply 7-second cinematic startup
         run: |
           python3 <<'PY'
           from pathlib import Path
-          p=Path('components/core-cricket-app.tsx')
-          s=p.read_text()
-          s=s.replace('  const [scoreTab, setScoreTab] = useState<"runs" | "extras">("runs");\n  const [extraType, setExtraType] = useState("Wide");', '  const [extraType, setExtraType] = useState<string | null>(null);')
-          old='''    {readOnly ? <section className="scoring-pad card readonly-panel"><span>VIEW-ONLY SCORECARD</span><h2>Live scoring controls are locked</h2><p>You can follow every delivery, current batter, bowler and match figures. Only an authorized scorer can update the score.</p></section> : <section className="scoring-pad card"><div className="pad-title"><div><span>RECORD DELIVERY</span><h2>{scoreTab === "runs" ? "Runs off the bat" : "Extras"}</h2></div><button onClick={onUndo}>↶ Undo</button></div>{scoreTab === "runs" && <><div className="run-grid">{[0, 1, 2, 3, 4, 6].map((run) => <button key={run} className={run >= 4 ? "boundary-button" : ""} onClick={() => onScore({ runsBatter: run })}>{run}<span>{run === 0 ? "DOT" : run === 4 ? "FOUR" : run === 6 ? "SIX" : "RUNS"}</span></button>)}</div><button className="wicket-button" onClick={onWicket}>W <span>WICKET</span></button></>}<button className={scoreTab === "extras" ? "extras-tab active" : "extras-tab"} onClick={() => setScoreTab((tab) => tab === "extras" ? "runs" : "extras")}>{scoreTab === "extras" ? "← Return to runs" : "+ Extras"}</button>{scoreTab === "extras" && <div className="extras-panel"><Field label="Extra type"><select value={extraType} onChange={(event) => setExtraType(event.target.value)}><option>Wide</option><option>No ball</option><option>Bye</option><option>Leg bye</option><option>Penalty</option></select></Field><div className="field-row"><Field label="Runs off bat"><select value={batRuns} onChange={(event) => setBatRuns(Number(event.target.value))}>{[0,1,2,3,4,5,6].map((run) => <option key={run}>{run}</option>)}</select></Field><Field label="Total extra runs"><select value={extraRuns} onChange={(event) => setExtraRuns(Number(event.target.value))}>{[0,1,2,3,4,5,6,7].map((run) => <option key={run}>{run}</option>)}</select></Field></div><p className="form-help">For a wide plus running, include the automatic one run in the total extra runs.</p><button className="primary-button full" onClick={() => onScore({ extraType, extraRuns, runsBatter: batRuns })}>Add extras</button></div>}</section>}'''
-          new='''    {readOnly ? <section className="scoring-pad card readonly-panel"><span>VIEW-ONLY SCORECARD</span><h2>Live scoring controls are locked</h2><p>You can follow every delivery, current batter, bowler and match figures. Only an authorized scorer can update the score.</p></section> : <section className="scoring-pad card"><div className="pad-title"><div><span>RECORD DELIVERY</span><h2>Runs off the bat</h2></div><button onClick={onUndo}>↶ Undo</button></div><div className="run-grid">{[0, 1, 2, 3, 4, 6].map((run) => <button key={run} className={run >= 4 ? "boundary-button" : ""} onClick={() => onScore({ runsBatter: run })}>{run}<span>{run === 0 ? "DOT" : run === 4 ? "FOUR" : run === 6 ? "SIX" : "RUNS"}</span></button>)}</div><button className="wicket-button" onClick={onWicket}>W <span>WICKET</span></button><div style={{marginTop:16}}><span style={{display:"block",fontSize:11,fontWeight:900,letterSpacing:".12em",marginBottom:8}}>EXTRAS</span><div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8}}>{["Wide","No ball","Bye","Leg bye","Penalty"].map((type)=><button key={type} className={extraType===type?"secondary-button active":"secondary-button"} onClick={()=>{setExtraType(type);setBatRuns(0);setExtraRuns(type==="Penalty"?5:1);}}>{type}</button>)}</div></div>{extraType && <div className="extras-panel" style={{marginTop:12}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}><b>{extraType}</b><button type="button" onClick={()=>setExtraType(null)} aria-label="Close extra">×</button></div><div className="field-row">{extraType === "No ball" && <Field label="Runs off bat"><select value={batRuns} onChange={(event) => setBatRuns(Number(event.target.value))}>{[0,1,2,3,4,5,6].map((run) => <option key={run}>{run}</option>)}</select></Field>}<Field label={extraType === "Wide" ? "Wide runs" : extraType === "No ball" ? "No-ball extra runs" : `${extraType} runs`}><select value={extraRuns} onChange={(event) => setExtraRuns(Number(event.target.value))}>{(extraType === "Penalty" ? [5,10] : [1,2,3,4,5,6,7]).map((run) => <option key={run}>{run}</option>)}</select></Field></div>{extraType === "Wide" && <p className="form-help">Include the automatic wide run in this total.</p>}{extraType === "No ball" && <p className="form-help">No-ball extras are added separately from any runs scored off the bat.</p>}<button className="primary-button full" onClick={() => { onScore({ extraType, extraRuns, runsBatter: extraType === "No ball" ? batRuns : 0 }); setExtraType(null); }}>Add {extraType}</button></div>}</section>}'''
-          if old not in s:
-              raise SystemExit('Scoring extras block not found')
-          s=s.replace(old,new)
-          p.write_text(s)
+
+          app=Path('components/core-cricket-app.tsx')
+          s=app.read_text()
+          s=s.replace('window.setTimeout(() => setShowSplash(false), 10000)','window.setTimeout(() => setShowSplash(false), 7000)')
+          app.write_text(s)
+
+          css=Path('app/globals.css')
+          c=css.read_text()
+          marker='/* CORE CRICKET 7S IMPACT V3 */'
+          if marker in c:
+              c=c.split(marker)[0].rstrip()+'\n'
+          c += r'''
+
+/* CORE CRICKET 7S IMPACT V3 */
+.startup-splash.cinematic-launch{overflow:hidden;background:radial-gradient(ellipse at 50% 79%,rgba(177,139,77,.25),transparent 31%),linear-gradient(180deg,#020705 0%,#07110c 51%,#162318 74%,#243221 100%)!important}
+.cinematic-launch .crater{display:none!important;opacity:0!important;background:none!important;box-shadow:none!important}
+.cinematic-launch .pitch-strip{position:absolute!important;left:50%!important;bottom:-4vh!important;width:min(78vw,720px)!important;height:43vh!important;transform:translateX(-50%) perspective(620px) rotateX(58deg)!important;transform-origin:bottom center!important;border-radius:2px!important;background:repeating-linear-gradient(88deg,rgba(62,43,25,.08) 0 2px,transparent 2px 10px),linear-gradient(180deg,#c4a46c,#94764c 46%,#665039)!important;box-shadow:0 -18px 50px rgba(204,163,94,.1)!important;opacity:1!important}
+.cinematic-launch .cinematic-logo{z-index:12!important;transform-origin:50% 88%;animation:coreDrop7 7s cubic-bezier(.18,.72,.16,1) both!important;filter:drop-shadow(0 24px 30px rgba(0,0,0,.5))}
+.cinematic-launch .cinematic-logo img{animation:coreGlow7 7s ease-out both!important}
+.cinematic-launch .pitch-cracks{position:absolute!important;left:50%!important;bottom:9vh!important;width:min(78vw,720px)!important;height:27vh!important;transform:translateX(-50%)!important;z-index:8!important;pointer-events:none}
+.cinematic-launch .pitch-cracks>i{position:absolute!important;left:50%!important;bottom:35%!important;width:3px!important;height:clamp(74px,12vh,150px)!important;transform-origin:bottom!important;background:linear-gradient(to top,#1e160f,#4b3520 58%,transparent)!important;border-radius:80% 20% 65% 15%!important;opacity:0;animation:crackGrow7 7s ease-out both!important}
+.cinematic-launch .pitch-cracks>i:nth-child(1){--r:-78deg;--l:.78}.cinematic-launch .pitch-cracks>i:nth-child(2){--r:-66deg;--l:1.04}.cinematic-launch .pitch-cracks>i:nth-child(3){--r:-54deg;--l:.86}.cinematic-launch .pitch-cracks>i:nth-child(4){--r:-43deg;--l:1.12}.cinematic-launch .pitch-cracks>i:nth-child(5){--r:-31deg;--l:.8}.cinematic-launch .pitch-cracks>i:nth-child(6){--r:-20deg;--l:1.15}.cinematic-launch .pitch-cracks>i:nth-child(7){--r:-10deg;--l:.92}.cinematic-launch .pitch-cracks>i:nth-child(8){--r:-3deg;--l:1.14}.cinematic-launch .pitch-cracks>i:nth-child(9){--r:7deg;--l:.85}.cinematic-launch .pitch-cracks>i:nth-child(10){--r:17deg;--l:1.1}.cinematic-launch .pitch-cracks>i:nth-child(11){--r:28deg;--l:.88}.cinematic-launch .pitch-cracks>i:nth-child(12){--r:39deg;--l:1.15}.cinematic-launch .pitch-cracks>i:nth-child(13){--r:49deg;--l:.82}.cinematic-launch .pitch-cracks>i:nth-child(14){--r:59deg;--l:1.08}.cinematic-launch .pitch-cracks>i:nth-child(15){--r:68deg;--l:.9}.cinematic-launch .pitch-cracks>i:nth-child(16){--r:76deg;--l:1.12}.cinematic-launch .pitch-cracks>i:nth-child(17){--r:84deg;--l:.8}.cinematic-launch .pitch-cracks>i:nth-child(18){--r:91deg;--l:1.03}
+.cinematic-launch .impact-zone>i{z-index:9!important;width:10px!important;height:8px!important;border-radius:35% 55% 30% 48%!important;background:linear-gradient(135deg,#80623b,#382619 72%)!important;box-shadow:0 0 0 1px rgba(186,143,79,.13)!important;opacity:0;animation:debris7 7s ease-out both!important}
+.cinematic-launch .impact-zone>i:nth-of-type(4n+1){--dx:-150px}.cinematic-launch .impact-zone>i:nth-of-type(4n+2){--dx:-72px}.cinematic-launch .impact-zone>i:nth-of-type(4n+3){--dx:78px}.cinematic-launch .impact-zone>i:nth-of-type(4n){--dx:155px}
+.cinematic-launch .smoke-plumes>i{background:radial-gradient(circle,rgba(214,190,146,.43),rgba(111,97,72,.2) 48%,transparent 74%)!important;filter:blur(7px)!important;animation:dust7 7s ease-out both!important}
+.cinematic-launch .impact-flash{background:radial-gradient(circle at 50% 70%,rgba(255,244,196,.98),rgba(255,190,74,.38) 14%,transparent 37%)!important;mix-blend-mode:screen;animation:flash7 7s ease-out both!important}
+.cinematic-launch .launch-lights i{animation:lights7 7s ease-out both!important}
+.cinematic-launch>small,.cinematic-launch .creator-credit,.cinematic-launch .gta-corner-badge{animation-duration:7s!important}
+@keyframes coreDrop7{0%{transform:translateY(-120vh) scale(.46) rotate(-3deg);opacity:0;filter:blur(7px)}8%{opacity:1}23%{transform:translateY(-40vh) scale(.74) rotate(-1deg);filter:blur(1px)}29.4%{transform:translateY(2.5vh) scale(1.09) rotate(.5deg)}31.2%{transform:translateY(-2vh) scale(.985)}34.5%{transform:translateY(0) scale(1.015)}39%,83%{transform:translateY(0) scale(1);opacity:1;filter:none}93%{opacity:1;transform:scale(1.02)}100%{opacity:0;transform:scale(1.035)}}
+@keyframes coreGlow7{0%,25%{filter:brightness(.78) saturate(.88)}29.5%{filter:brightness(1.9) saturate(1.18) drop-shadow(0 0 22px rgba(255,215,127,.9))}36%,84%{filter:brightness(1.08) saturate(1.04) drop-shadow(0 0 8px rgba(255,210,120,.22))}100%{filter:brightness(1.12)}}
+@keyframes crackGrow7{0%,28.8%{transform:rotate(var(--r)) scaleY(0);opacity:0}31%{opacity:.95}39%,100%{transform:rotate(var(--r)) scaleY(var(--l));opacity:.9}}
+@keyframes debris7{0%,28.5%{transform:translate(0,0) rotate(0) scale(.2);opacity:0}30%{opacity:1}43%{transform:translate(var(--dx),-135px) rotate(190deg) scale(1);opacity:.95}64%{transform:translate(var(--dx),30px) rotate(390deg) scale(.78);opacity:.45}78%,100%{opacity:0}}
+@keyframes dust7{0%,28%{transform:translateY(24px) scale(.2);opacity:0}32%{opacity:.54}52%{transform:translateY(-85px) scale(1.35);opacity:.32}73%,100%{transform:translateY(-155px) scale(1.9);opacity:0}}
+@keyframes flash7{0%,28.5%{opacity:0;transform:scale(.35)}29.8%{opacity:1;transform:scale(1.18)}33%{opacity:.34;transform:scale(1.55)}42%,100%{opacity:0;transform:scale(2)}}
+@keyframes lights7{0%{opacity:.35;filter:brightness(.7)}23%{opacity:.78;filter:brightness(1.1)}30%{opacity:1;filter:brightness(1.8)}43%,85%{opacity:.82;filter:brightness(1.1)}100%{opacity:.2;filter:brightness(.8)}}
+'''
+          css.write_text(c)
           PY
-      - name: Commit change
+      - name: Commit startup update
         run: |
           git config user.name "Core Cricket Update"
           git config user.email "actions@github.com"
-          git add components/core-cricket-app.tsx
-          git commit -m "Show extras as direct scoring buttons" || exit 0
+          git add components/core-cricket-app.tsx app/globals.css
+          git commit -m "Animate startup with 7-second pitch impact" || exit 0
           git push
