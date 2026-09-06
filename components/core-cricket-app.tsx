@@ -319,7 +319,7 @@ export function CoreCricketApp({ user }: { user: CoreCricketUser }) {
     <nav className={`mobile-nav${!viewOnly && view === "home" ? " has-team-action" : ""}`} aria-label="Mobile navigation">{nav.map((item) => <button key={item.id} className={view === item.id ? "nav-active" : ""} onClick={() => go(item.id)}><span>{item.icon}</span>{item.label}</button>)}{!viewOnly && view === "home" && <button className="mobile-add-team" onClick={() => setModal("team")}><span>＋</span>Add Team</button>}</nav>
     {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice("")} aria-label="Dismiss">×</button></div>}
     {loading && <div className="loading-line" aria-label="Loading" />}
-    {modal && <Modal type={modal} data={data} match={activeMatch} selectedTournamentId={selectedTournamentId} selectedTeamId={playerTeamId} onClose={() => { setModal(null); setPlayerTeamId(null); }} onSubmit={submitEntity} onWicket={async (payload) => { setModal(null); await score(payload); }} onBowler={changeBowler} onStartInnings={startInnings} onResolveTie={resolveTie} onUnlock={() => { setCreatorUnlocked(true); setModal(null); setNotice("Creator test plan activated. No payment was charged."); }} />}
+    {modal && <Modal type={modal} data={data} match={activeMatch} selectedTournamentId={selectedTournamentId} selectedTeamId={playerTeamId} onClose={() => { setModal(null); setPlayerTeamId(null); }} onSubmit={submitEntity} onWicket={async (payload) => { setModal(null); await score(payload); }} onBowler={changeBowler} onStartInnings={startInnings} onResolveTie={resolveTie} onUnlock={() => { setModal(null); }} />}
     {installGuide && <InstallGuide onClose={() => setInstallGuide(false)} />}
   </div>;
 }
