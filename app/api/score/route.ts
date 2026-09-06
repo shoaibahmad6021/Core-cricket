@@ -30,22 +30,37 @@ export async function POST(request: Request) {
     const [match] = await db.select().from(matches).where(eq(matches.id, Number(body.matchId))).limit(1);
     if (!match) return Response.json({ error: "Match not found" }, { status: 404 });
     const user = await getChatGPTUser(); if (!user) return Response.json({ error: "Sign in is required" }, { status: 401 });
-    if (!match.tournamentId) return Response.json({ error: "Scoring must be started from a tournament" }, { status: 403 });
-    const officials = await db.select().from(tournamentScorers).where(eq(tournamentScorers.tournamentId, match.tournamentId));
-    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, match.tournamentId)).limit(1);
     const [handoff] = body.handoffToken ? await db.select().from(scoringHandoffs).where(and(eq(scoringHandoffs.token, body.handoffToken), eq(scoringHandoffs.matchId, match.id), eq(scoringHandoffs.active, true))).limit(1) : [];
     const email = user.email.trim().toLowerCase(); const name = (user.fullName || user.displayName).trim().toLowerCase();
-    const creator = tournament && (tournament.createdByEmail.trim().toLowerCase() === email || tournament.createdByName.trim().toLowerCase() === name);
-    if (!handoff && !creator && !isCoreCricketAdmin(user) && !officials.some((scorer) => scorer.email.trim().toLowerCase() === email || scorer.name.trim().toLowerCase() === name)) return Response.json({ error: "Only the tournament creator, an official scorer or an authorized handoff device can update the score" }, { status: 403 });
+    if (!match.tournamentId) {
+      const teamManagers = await db.select().from(players).where(sql`${players.teamId} IN (${match.teamAId}, ${match.teamBId})`);
+      const friendlyAuthorized = isCoreCricketAdmin(user) || teamManagers.some((player) => player.name.trim().toLowerCase() === name && ["captain", "team admin"].includes((player.memberRole ?? "").trim().toLowerCase()));
+      if (!handoff && !friendlyAuthorized) return Response.json({ error: "Only an administrator, team captain, team admin or authorized handoff device can score a friendly match" }, { status: 403 });
+    } else {
+      const officials = await db.select().from(tournamentScorers).where(eq(tournamentScorers.tournamentId, match.tournamentId));
+      const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, match.tournamentId)).limit(1);
+      const creator = tournament && (tournament.createdByEmail.trim().toLowerCase() === email || tournament.createdByName.trim().toLowerCase() === name);
+      if (!handoff && !creator && !isCoreCricketAdmin(user) && !officials.some((scorer) => scorer.email.trim().toLowerCase() === email || scorer.name.trim().toLowerCase() === name)) return Response.json({ error: "Only the tournament creator, an official scorer or an authorized handoff device can update the score" }, { status: 403 });
+    }
 
     if (body.action === "start") {
-      if (!match.tossWinnerTeamId || !match.tossDecision) return Response.json({ error: "Complete the toss and batting decision before scoring" }, { status: 409 });
-      const selected = await db.select().from(matchPlayers).where(eq(matchPlayers.matchId, match.id));
-      if (selected.filter((item) => item.teamId === match.teamAId).length !== 11 || selected.filter((item) => item.teamId === match.teamBId).length !== 11) return Response.json({ error: "Select the playing XI for both teams before scoring" }, { status: 409 });
       if (!body.strikerId || !body.nonStrikerId || !body.bowlerId) return Response.json({ error: "Select two batters and a bowler" }, { status: 400 });
-      const eligible = new Set(selected.map((item) => item.playerId));
-      if (![body.strikerId, body.nonStrikerId, body.bowlerId].every((id) => eligible.has(Number(id)))) return Response.json({ error: "Opening players must be selected in the playing XI" }, { status: 400 });
       if (body.strikerId === body.nonStrikerId) return Response.json({ error: "Select two different opening batters" }, { status: 400 });
+      if (!match.tournamentId) {
+        const openingPlayers = await db.select().from(players).where(sql`${players.id} IN (${Number(body.strikerId)}, ${Number(body.nonStrikerId)}, ${Number(body.bowlerId)})`);
+        const strikerPlayer = openingPlayers.find((player) => player.id === Number(body.strikerId));
+        const nonStrikerPlayer = openingPlayers.find((player) => player.id === Number(body.nonStrikerId));
+        const bowlerPlayer = openingPlayers.find((player) => player.id === Number(body.bowlerId));
+        if (!strikerPlayer || !nonStrikerPlayer || !bowlerPlayer) return Response.json({ error: "Select valid opening players" }, { status: 400 });
+        if (strikerPlayer.teamId !== match.battingTeamId || nonStrikerPlayer.teamId !== match.battingTeamId) return Response.json({ error: "Both opening batters must belong to the batting team" }, { status: 400 });
+        if (bowlerPlayer.teamId !== match.bowlingTeamId) return Response.json({ error: "The opening bowler must belong to the bowling team" }, { status: 400 });
+      } else {
+        if (!match.tossWinnerTeamId || !match.tossDecision) return Response.json({ error: "Complete the toss and batting decision before scoring" }, { status: 409 });
+        const selected = await db.select().from(matchPlayers).where(eq(matchPlayers.matchId, match.id));
+        if (selected.filter((item) => item.teamId === match.teamAId).length !== 11 || selected.filter((item) => item.teamId === match.teamBId).length !== 11) return Response.json({ error: "Select the playing XI for both teams before scoring" }, { status: 409 });
+        const eligible = new Set(selected.map((item) => item.playerId));
+        if (![body.strikerId, body.nonStrikerId, body.bowlerId].every((id) => eligible.has(Number(id)))) return Response.json({ error: "Opening players must be selected in the playing XI" }, { status: 400 });
+      }
       const [updated] = await db.update(matches).set({
         strikerId: body.strikerId,
         nonStrikerId: body.nonStrikerId,
