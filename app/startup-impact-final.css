@@ -1,195 +1,153 @@
-/* Final Core Cricket startup effect — 7 seconds, no crater/black hole */
-.startup-splash.cinematic-launch {
+/* Core Cricket startup — 7 seconds, stadium preserved, logo lands on pitch */
+.startup-splash.cinematic-launch,
+.cinematic-launch {
   overflow: hidden;
+  isolation: isolate;
   background:
-    radial-gradient(ellipse at 50% 80%, rgba(190,145,75,.26), transparent 31%),
-    radial-gradient(circle at 10% 18%, rgba(255,244,205,.14), transparent 18%),
-    radial-gradient(circle at 90% 18%, rgba(255,244,205,.14), transparent 18%),
-    linear-gradient(180deg,#020605 0%,#07110c 50%,#152418 74%,#253220 100%) !important;
+    linear-gradient(180deg,rgba(1,8,4,.12),rgba(2,11,6,.18) 48%,rgba(0,7,3,.46)),
+    url('/launch-ground.webp') center/cover no-repeat !important;
   animation: startupFinalLife 7s linear forwards !important;
 }
 
-/* Remove the old black-hole/crater treatment entirely. */
-.startup-splash.cinematic-launch .crater {
-  display: none !important;
-  opacity: 0 !important;
-  background: none !important;
-  box-shadow: none !important;
+/* Keep the stadium lighting visible throughout the sequence. */
+.cinematic-launch .launch-lights {
+  display: block !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 3 !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
 }
+.cinematic-launch .launch-lights i {
+  display: block !important;
+  opacity: .72;
+  background: linear-gradient(180deg,rgba(245,255,225,.92),rgba(187,255,93,.24) 57%,transparent) !important;
+  filter: blur(7px) brightness(1.15);
+  animation: startupLights7 7s ease-in-out both !important;
+}
+.cinematic-launch .launch-lights i:nth-child(1){left:5%!important;transform:rotate(-19deg)!important}
+.cinematic-launch .launch-lights i:nth-child(2){left:27%!important;transform:rotate(-8deg)!important}
+.cinematic-launch .launch-lights i:nth-child(3){left:63%!important;transform:rotate(8deg)!important}
+.cinematic-launch .launch-lights i:nth-child(4){left:84%!important;transform:rotate(19deg)!important}
 
-/* Real dry cricket pitch beneath the impact. */
-.startup-splash.cinematic-launch .pitch-strip {
+/* Pitch and impact point are deliberately aligned at 69% viewport height. */
+.cinematic-launch .impact-zone {
+  display: block !important;
   position: absolute !important;
   left: 50% !important;
-  bottom: -4vh !important;
-  width: min(78vw, 720px) !important;
-  height: 43vh !important;
-  transform: translateX(-50%) perspective(620px) rotateX(58deg) !important;
-  transform-origin: bottom center !important;
-  border-radius: 2px !important;
-  opacity: 1 !important;
+  top: 69% !important;
+  width: min(88vw,760px) !important;
+  height: 190px !important;
+  transform: translate(-50%,-50%) !important;
+  z-index: 7 !important;
+}
+.cinematic-launch .pitch-strip {
+  display: block !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: 69% !important;
+  width: min(82vw,680px) !important;
+  height: 150px !important;
+  transform: translate(-50%,-50%) perspective(620px) rotateX(58deg) !important;
+  transform-origin: center bottom !important;
+  opacity: .97 !important;
+  border-radius: 3px !important;
   background:
-    repeating-linear-gradient(88deg,rgba(62,43,25,.08) 0 2px,transparent 2px 10px),
-    linear-gradient(180deg,#c7a66f,#927248 47%,#66503a) !important;
-  box-shadow: 0 -18px 50px rgba(205,163,94,.10) !important;
+    repeating-linear-gradient(88deg,rgba(58,40,23,.08) 0 2px,transparent 2px 10px),
+    linear-gradient(180deg,#c7aa78,#a38052 50%,#6c5135) !important;
+  box-shadow: 0 18px 45px rgba(0,0,0,.26) !important;
 }
 
-/* Logo falls from above, hits once, rebounds slightly, then settles. */
-.startup-splash.cinematic-launch .cinematic-logo {
+/* No black hole or crater. */
+.cinematic-launch .crater { display:none !important; opacity:0 !important; }
+
+/* Icon starts above the stadium and physically lands at the pitch impact point. */
+.cinematic-launch .cinematic-logo {
+  display: block !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: 69% !important;
   z-index: 12 !important;
-  transform-origin: 50% 88% !important;
-  animation: coreStartupDrop7 7s cubic-bezier(.18,.72,.16,1) both !important;
-  filter: drop-shadow(0 24px 30px rgba(0,0,0,.50));
+  width: clamp(210px,28vw,360px) !important;
+  height: auto !important;
+  opacity: 0;
+  transform-origin: 50% 92% !important;
+  animation: coreStartupDrop7 7s cubic-bezier(.22,.72,.18,1) both !important;
+  filter: drop-shadow(0 24px 30px rgba(0,0,0,.58));
 }
-
-.startup-splash.cinematic-launch .cinematic-logo img {
+.cinematic-launch .cinematic-logo img {
+  width:100%!important;
+  height:auto!important;
   animation: coreStartupGlow7 7s ease-out both !important;
 }
 
-/* Crack field originates under the logo instead of forming a hole. */
-.startup-splash.cinematic-launch .pitch-cracks {
-  position: absolute !important;
-  left: 50% !important;
-  bottom: 9vh !important;
-  width: min(78vw, 720px) !important;
-  height: 27vh !important;
-  transform: translateX(-50%) !important;
-  z-index: 8 !important;
-  pointer-events: none !important;
+.cinematic-launch .pitch-cracks {
+  display:block!important;
+  position:absolute!important;
+  left:50%!important;
+  top:69%!important;
+  width:min(82vw,680px)!important;
+  height:150px!important;
+  transform:translate(-50%,-50%)!important;
+  z-index:9!important;
+}
+.cinematic-launch .pitch-cracks > i {
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:3px!important;
+  height:clamp(68px,10vh,125px)!important;
+  transform-origin:top center!important;
+  background:linear-gradient(to bottom,#21170f,#4b3520 62%,transparent)!important;
+  opacity:0;
+  animation:startupCrackGrow7 7s ease-out both!important;
+}
+.cinematic-launch .pitch-cracks > i:nth-child(1){--r:-82deg;--l:.78}.cinematic-launch .pitch-cracks > i:nth-child(2){--r:-68deg;--l:1.03}.cinematic-launch .pitch-cracks > i:nth-child(3){--r:-55deg;--l:.88}.cinematic-launch .pitch-cracks > i:nth-child(4){--r:-42deg;--l:1.1}.cinematic-launch .pitch-cracks > i:nth-child(5){--r:-29deg;--l:.84}.cinematic-launch .pitch-cracks > i:nth-child(6){--r:-17deg;--l:1.12}.cinematic-launch .pitch-cracks > i:nth-child(7){--r:-7deg;--l:.92}.cinematic-launch .pitch-cracks > i:nth-child(8){--r:4deg;--l:1.06}.cinematic-launch .pitch-cracks > i:nth-child(9){--r:15deg;--l:.86}.cinematic-launch .pitch-cracks > i:nth-child(10){--r:27deg;--l:1.1}.cinematic-launch .pitch-cracks > i:nth-child(11){--r:39deg;--l:.9}.cinematic-launch .pitch-cracks > i:nth-child(12){--r:52deg;--l:1.14}.cinematic-launch .pitch-cracks > i:nth-child(13){--r:64deg;--l:.84}.cinematic-launch .pitch-cracks > i:nth-child(14){--r:76deg;--l:1.08}
+
+.cinematic-launch .impact-zone > i {
+  z-index:10!important;
+  opacity:0;
+  background:linear-gradient(135deg,#8c693f,#3a2819 72%)!important;
+  animation:startupDebris7 7s ease-out both!important;
+}
+.cinematic-launch .smoke-plumes > i {
+  background:radial-gradient(circle,rgba(222,199,155,.62),rgba(111,97,72,.28) 48%,transparent 74%)!important;
+  filter:blur(6px)!important;
+  animation:startupDust7 7s ease-out both!important;
+}
+.cinematic-launch .impact-flash {
+  display:block!important;
+  position:absolute!important;
+  left:50%!important;
+  top:69%!important;
+  z-index:11!important;
+  background:radial-gradient(circle,rgba(255,255,235,1),rgba(255,210,91,.68) 18%,transparent 55%)!important;
+  box-shadow:0 0 90px 38px rgba(196,255,95,.65),0 0 180px 80px rgba(255,215,112,.35)!important;
+  animation:startupFlash7 7s ease-out both!important;
 }
 
-.startup-splash.cinematic-launch .pitch-cracks > i {
-  position: absolute !important;
-  left: 50% !important;
-  bottom: 35% !important;
-  width: 3px !important;
-  height: clamp(74px,12vh,150px) !important;
-  transform-origin: bottom !important;
-  background: linear-gradient(to top,#1e160f,#4b3520 58%,transparent) !important;
-  border-radius: 80% 20% 65% 15% !important;
-  opacity: 0;
-  animation: startupCrackGrow7 7s ease-out both !important;
-}
-
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(1){--r:-78deg;--l:.78}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(2){--r:-66deg;--l:1.04}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(3){--r:-54deg;--l:.86}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(4){--r:-43deg;--l:1.12}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(5){--r:-31deg;--l:.80}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(6){--r:-20deg;--l:1.15}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(7){--r:-10deg;--l:.92}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(8){--r:-3deg;--l:1.14}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(9){--r:7deg;--l:.85}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(10){--r:17deg;--l:1.10}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(11){--r:28deg;--l:.88}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(12){--r:39deg;--l:1.15}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(13){--r:49deg;--l:.82}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(14){--r:59deg;--l:1.08}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(15){--r:68deg;--l:.90}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(16){--r:76deg;--l:1.12}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(17){--r:84deg;--l:.80}
-.startup-splash.cinematic-launch .pitch-cracks > i:nth-child(18){--r:91deg;--l:1.03}
-
-/* Turf/soil fragments fly outward on impact. */
-.startup-splash.cinematic-launch .impact-zone > i {
-  z-index: 9 !important;
-  width: 10px !important;
-  height: 8px !important;
-  border-radius: 35% 55% 30% 48% !important;
-  background: linear-gradient(135deg,#80623b,#382619 72%) !important;
-  box-shadow: 0 0 0 1px rgba(186,143,79,.13) !important;
-  opacity: 0;
-  animation: startupDebris7 7s ease-out both !important;
-}
-.startup-splash.cinematic-launch .impact-zone > i:nth-of-type(4n+1){--dx:-150px}
-.startup-splash.cinematic-launch .impact-zone > i:nth-of-type(4n+2){--dx:-72px}
-.startup-splash.cinematic-launch .impact-zone > i:nth-of-type(4n+3){--dx:78px}
-.startup-splash.cinematic-launch .impact-zone > i:nth-of-type(4n){--dx:155px}
-
-/* Dust rises from the broken pitch; no dark crater underneath it. */
-.startup-splash.cinematic-launch .smoke-plumes > i {
-  background: radial-gradient(circle,rgba(214,190,146,.43),rgba(111,97,72,.20) 48%,transparent 74%) !important;
-  filter: blur(7px) !important;
-  animation: startupDust7 7s ease-out both !important;
-}
-
-.startup-splash.cinematic-launch .impact-flash {
-  background: radial-gradient(circle at 50% 70%,rgba(255,244,196,.98),rgba(255,190,74,.38) 14%,transparent 37%) !important;
-  mix-blend-mode: screen;
-  animation: startupFlash7 7s ease-out both !important;
-}
-
-.startup-splash.cinematic-launch .launch-lights i {
-  animation: startupLights7 7s ease-out both !important;
-}
-
-.startup-splash.cinematic-launch > small,
-.startup-splash.cinematic-launch .creator-credit,
-.startup-splash.cinematic-launch .gta-corner-badge {
-  animation-duration: 7s !important;
-}
-
-@keyframes startupFinalLife {
-  0%,94% { opacity:1; visibility:visible; pointer-events:auto; }
-  99% { opacity:1; visibility:visible; pointer-events:auto; }
-  100% { opacity:0; visibility:hidden; pointer-events:none; }
-}
-
+@keyframes startupFinalLife {0%,94%{opacity:1;visibility:visible}100%{opacity:0;visibility:hidden;pointer-events:none}}
 @keyframes coreStartupDrop7 {
-  0% { transform:translateY(-120vh) scale(.46) rotate(-3deg); opacity:0; filter:blur(7px); }
-  8% { opacity:1; }
-  23% { transform:translateY(-40vh) scale(.74) rotate(-1deg); filter:blur(1px); }
-  29.4% { transform:translateY(2.5vh) scale(1.09) rotate(.5deg); }
-  31.2% { transform:translateY(-2vh) scale(.985); }
-  34.5% { transform:translateY(0) scale(1.015); }
-  39%,83% { transform:translateY(0) scale(1); opacity:1; filter:none; }
-  93% { opacity:1; transform:scale(1.02); }
-  100% { opacity:0; transform:scale(1.035); }
+  0%{opacity:0;transform:translate(-50%,-125vh) scale(.52) rotate(-6deg)}
+  7%{opacity:1}
+  22%{transform:translate(-50%,-58vh) scale(.78) rotate(-2deg)}
+  29%{transform:translate(-50%,-50%) scale(1.12,.94) rotate(.5deg)}
+  30.5%{transform:translate(-50%,-61%) scale(.97,1.05)}
+  33.5%{transform:translate(-50%,-50%) scale(1.025,.985)}
+  38%,88%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  96%{opacity:1;transform:translate(-50%,-50%) scale(1.025)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.04)}
 }
+@keyframes coreStartupGlow7 {0%,24%{filter:brightness(.78) saturate(.9)}29.2%{filter:brightness(2.25) saturate(1.35) drop-shadow(0 0 30px rgba(239,255,175,.95))}36%,88%{filter:brightness(1.1) saturate(1.05) drop-shadow(0 0 12px rgba(190,255,88,.28))}100%{filter:brightness(1.15)}}
+@keyframes startupCrackGrow7 {0%,28.7%{transform:rotate(var(--r)) scaleY(0);opacity:0}30.2%{opacity:.96}39%,100%{transform:rotate(var(--r)) scaleY(var(--l));opacity:.9}}
+@keyframes startupDebris7 {0%,28.5%{opacity:0;transform:translate(-50%,-50%) scale(.2)}29.5%{opacity:1}44%{opacity:.95;transform:translate(calc(-50% + (var(--piece) - 5)*24px),-190px) rotate(calc(var(--piece)*55deg))}68%,100%{opacity:0;transform:translate(calc(-50% + (var(--piece) - 5)*30px),20px) rotate(calc(var(--piece)*105deg))}}
+@keyframes startupDust7 {0%,28.7%{opacity:0;transform:translateY(10px) scale(.18)}31%{opacity:.72}52%{opacity:.38;transform:translateY(-95px) scale(1.5)}76%,100%{opacity:0;transform:translateY(-185px) scale(2.15)}}
+@keyframes startupFlash7 {0%,28.5%{opacity:0;transform:translate(-50%,-50%) scale(.15)}29.4%{opacity:1;transform:translate(-50%,-50%) scale(1)}32.5%{opacity:.32;transform:translate(-50%,-50%) scale(3.2)}40%,100%{opacity:0;transform:translate(-50%,-50%) scale(5)}}
+@keyframes startupLights7 {0%{opacity:.55;filter:blur(8px) brightness(.9)}18%{opacity:.82;filter:blur(7px) brightness(1.15)}29%{opacity:1;filter:blur(5px) brightness(1.9)}36%{opacity:.86;filter:blur(8px) brightness(1.25)}55%,88%{opacity:.68;filter:blur(9px) brightness(1)}100%{opacity:.2;filter:blur(11px) brightness(.8)}}
 
-@keyframes coreStartupGlow7 {
-  0%,25% { filter:brightness(.78) saturate(.88); }
-  29.5% { filter:brightness(1.9) saturate(1.18) drop-shadow(0 0 22px rgba(255,215,127,.90)); }
-  36%,84% { filter:brightness(1.08) saturate(1.04) drop-shadow(0 0 8px rgba(255,210,120,.22)); }
-  100% { filter:brightness(1.12); }
-}
-
-@keyframes startupCrackGrow7 {
-  0%,28.8% { transform:rotate(var(--r)) scaleY(0); opacity:0; }
-  31% { opacity:.95; }
-  39%,100% { transform:rotate(var(--r)) scaleY(var(--l)); opacity:.90; }
-}
-
-@keyframes startupDebris7 {
-  0%,28.5% { transform:translate(0,0) rotate(0) scale(.2); opacity:0; }
-  30% { opacity:1; }
-  43% { transform:translate(var(--dx),-135px) rotate(190deg) scale(1); opacity:.95; }
-  64% { transform:translate(var(--dx),30px) rotate(390deg) scale(.78); opacity:.45; }
-  78%,100% { opacity:0; }
-}
-
-@keyframes startupDust7 {
-  0%,28% { transform:translateY(24px) scale(.2); opacity:0; }
-  32% { opacity:.54; }
-  52% { transform:translateY(-85px) scale(1.35); opacity:.32; }
-  73%,100% { transform:translateY(-155px) scale(1.9); opacity:0; }
-}
-
-@keyframes startupFlash7 {
-  0%,28.5% { opacity:0; transform:scale(.35); }
-  29.8% { opacity:1; transform:scale(1.18); }
-  33% { opacity:.34; transform:scale(1.55); }
-  42%,100% { opacity:0; transform:scale(2); }
-}
-
-@keyframes startupLights7 {
-  0% { opacity:.35; filter:brightness(.70); }
-  23% { opacity:.78; filter:brightness(1.10); }
-  30% { opacity:1; filter:brightness(1.80); }
-  43%,85% { opacity:.82; filter:brightness(1.10); }
-  100% { opacity:.20; filter:brightness(.80); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .startup-splash.cinematic-launch { animation-duration: 2s !important; }
+@media(max-width:760px){
+  .cinematic-launch .cinematic-logo{top:68%!important;width:220px!important}
+  .cinematic-launch .impact-zone,.cinematic-launch .pitch-strip,.cinematic-launch .pitch-cracks,.cinematic-launch .impact-flash{top:68%!important}
+  .cinematic-launch .pitch-strip{width:92vw!important;height:125px!important}
+  .cinematic-launch .impact-zone{width:96vw!important;height:170px!important}
 }
