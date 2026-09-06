@@ -1,1 +1,1 @@
-apply direct extras scoring controls
+apply 7-second startup impact
