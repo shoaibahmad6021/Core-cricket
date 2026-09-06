@@ -5,7 +5,7 @@ on:
     branches:
       - production-feature-update
     paths:
-      - ui-feature.patch
+      - ui-feature-ready.txt
 
 permissions:
   contents: write
@@ -18,14 +18,11 @@ jobs:
         with:
           ref: production-feature-update
           fetch-depth: 0
-      - name: Apply UI feature patch
+      - name: Reassemble and apply UI feature patch
         shell: bash
         run: |
           set -e
-          if [ ! -f ui-feature.patch ]; then
-            echo "Patch file is not present; nothing to apply."
-            exit 0
-          fi
+          cat ui-feature-*.patch > ui-feature.patch
           git apply --check ui-feature.patch
           git apply ui-feature.patch
           git config user.name "Core Cricket Update"
