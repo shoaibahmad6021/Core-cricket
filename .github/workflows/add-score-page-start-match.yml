@@ -1,0 +1,59 @@
+name: Add Score Page Start Match
+on:
+  push:
+    paths:
+      - '.github/workflows/add-score-page-start-match.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Add direct Start Match action to score page
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p=Path('components/core-cricket-app.tsx')
+          s=p.read_text()
+          reps=[]
+          reps.append((
+          '  const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null);\n',
+          '  const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null);\n  const [pendingStartMatchId, setPendingStartMatchId] = useState<number | null>(null);\n'))
+          reps.append((
+          '  const canManageTeam = (teamId: number) => !userPreview && (user.isAdmin || data.players.some((player) => player.teamId === teamId && player.name.trim().toLowerCase() === user.displayName.trim().toLowerCase() && ["captain", "team admin"].includes((player.memberRole ?? "").toLowerCase())));\n',
+          '  const canManageTeam = (teamId: number) => !userPreview && (user.isAdmin || data.players.some((player) => player.teamId === teamId && player.name.trim().toLowerCase() === user.displayName.trim().toLowerCase() && ["captain", "team admin"].includes((player.memberRole ?? "").toLowerCase())));\n  const canStartActiveMatch = !userPreview && Boolean(activeMatch && (user.isAdmin || canManageTeam(activeMatch.teamAId) || canManageTeam(activeMatch.teamBId) || (activeMatch.tournamentId && data.tournaments.some((item) => item.id === activeMatch.tournamentId && (((item.createdByEmail ?? "").toLowerCase() === user.email.toLowerCase()) || ((item.createdByName ?? "").toLowerCase() === user.displayName.toLowerCase()))))));\n'))
+          reps.append((
+          '{view === "score" && <Scoring readOnly={!canScoreActiveMatch} data={data} match={activeMatch} tournament={activeTournament} battingTeam={battingTeam} bowlingTeam={bowlingTeam} striker={striker} nonStriker={nonStriker} bowler={bowler} transferLink={transferLink} transferQr={transferQr} onTransfer={createScoringTransfer} onStartSetup={() => setModal("innings")} onScore={score} onUndo={undo} onWicket={() => setModal("wicket")} onEndInnings={() => { setModal("tie"); return Promise.resolve(); }} />}',
+          '{view === "score" && <Scoring readOnly={!canScoreActiveMatch} canStartMatch={canStartActiveMatch} data={data} match={activeMatch} tournament={activeTournament} battingTeam={battingTeam} bowlingTeam={bowlingTeam} striker={striker} nonStriker={nonStriker} bowler={bowler} transferLink={transferLink} transferQr={transferQr} onTransfer={createScoringTransfer} onStartMatch={() => { if (!activeMatch?.tournamentId) { setNotice("Assign this match to a tournament so an official scorer can be selected before it starts."); return; } setPendingStartMatchId(activeMatch.id); setSelectedTournamentId(activeMatch.tournamentId); setTournamentHubOpen(true); go("manage"); }} onStartSetup={() => setModal("innings")} onScore={score} onUndo={undo} onWicket={() => setModal("wicket")} onEndInnings={() => { setModal("tie"); return Promise.resolve(); }} />}' ))
+          reps.append((
+          '<TournamentHub data={data} tournamentId={selectedTournamentId} user={user} siteAdmin={!viewOnly} officialScorer={canScoreTournament(selectedTournamentId)} canManageTeam={canManageTeam}',
+          '<TournamentHub data={data} tournamentId={selectedTournamentId} user={user} siteAdmin={!viewOnly} officialScorer={canScoreTournament(selectedTournamentId)} initialStartMatchId={pendingStartMatchId} onInitialStartConsumed={() => setPendingStartMatchId(null)} canManageTeam={canManageTeam}'))
+          reps.append((
+          'function Scoring({ readOnly, data, match, tournament, battingTeam, bowlingTeam, striker, nonStriker, bowler, transferLink, transferQr, onTransfer, onStartSetup, onScore, onUndo, onWicket, onEndInnings }: { readOnly: boolean;',
+          'function Scoring({ readOnly, canStartMatch, data, match, tournament, battingTeam, bowlingTeam, striker, nonStriker, bowler, transferLink, transferQr, onTransfer, onStartMatch, onStartSetup, onScore, onUndo, onWicket, onEndInnings }: { readOnly: boolean; canStartMatch: boolean;'))
+          reps.append((
+          'onTransfer: () => Promise<void>; onStartSetup: () => void;',
+          'onTransfer: () => Promise<void>; onStartMatch: () => void; onStartSetup: () => void;'))
+          old='if (match.status === "Upcoming") return <div className="page"><SectionHead eyebrow={tournament?.name ?? "TOURNAMENT MATCH"} title={`${battingTeam?.shortName} vs ${bowlingTeam?.shortName}`} /><section className="no-live-page"><span>＋</span><h2>{readOnly ? "Match has not started" : "Official scorer: start this match"}</h2><p>{readOnly ? "The live scorecard will appear after an assigned tournament scorer starts scoring." : "Select the opening batters and bowler to begin the live score."}</p>{!readOnly && <button className="primary-button" onClick={onStartSetup}>Start scoring</button>}</section></div>;'
+          new='if (match.status === "Upcoming") return <div className="page"><SectionHead eyebrow={tournament?.name ?? "TOURNAMENT MATCH"} title={`${battingTeam?.shortName} vs ${bowlingTeam?.shortName}`} /><section className="no-live-page"><span>＋</span><h2>Match has not started</h2><p>{canStartMatch ? "Choose Start Match to confirm an official scorer, Playing XI and toss before live scoring begins." : "The live scorecard will appear after an authorized organizer or team admin starts the match."}</p>{canStartMatch && <button className="primary-button" onClick={onStartMatch}>Start Match</button>}</section></div>;'
+          reps.append((old,new))
+          reps.append((
+          'function TournamentHub({ data, tournamentId, user, siteAdmin, officialScorer, canManageTeam, onBack, onRefresh, onUpload, onAdd, onOpenMatch, onAssignPlayer, onAddPlayer }: { data: Data; tournamentId: number; user: CoreCricketUser; siteAdmin: boolean; officialScorer: boolean;',
+          'function TournamentHub({ data, tournamentId, user, siteAdmin, officialScorer, initialStartMatchId, onInitialStartConsumed, canManageTeam, onBack, onRefresh, onUpload, onAdd, onOpenMatch, onAssignPlayer, onAddPlayer }: { data: Data; tournamentId: number; user: CoreCricketUser; siteAdmin: boolean; officialScorer: boolean; initialStartMatchId?: number | null; onInitialStartConsumed: () => void;'))
+          reps.append((
+          '  const [newGroup, setNewGroup] = useState("");\n  const tournament = data.tournaments.find((item) => item.id === tournamentId);',
+          '  const [newGroup, setNewGroup] = useState("");\n  useEffect(() => { if (initialStartMatchId) { setStartScorerId(null); setStartMatchId(initialStartMatchId); onInitialStartConsumed(); } }, [initialStartMatchId, onInitialStartConsumed]);\n  const tournament = data.tournaments.find((item) => item.id === tournamentId);'))
+          for old,new in reps:
+              if old not in s:
+                  raise SystemExit('Missing expected source snippet:\n'+old[:260])
+              s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+          git config user.name "Core Cricket Update"
+          git config user.email "actions@github.com"
+          git add components/core-cricket-app.tsx
+          git commit -m "Add Start Match button to upcoming score page"
+          git push origin main
