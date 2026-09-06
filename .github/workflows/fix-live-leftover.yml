@@ -1,0 +1,36 @@
+name: Fix Core Cricket live leftover
+
+on:
+  push:
+    branches:
+      - production-feature-update
+    paths:
+      - ts-fix-ready.txt
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: production-feature-update
+      - name: Remove obsolete paid-plan callback
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p=Path('components/core-cricket-app.tsx')
+          s=p.read_text()
+          old='onUnlock={() => { setCreatorUnlocked(true); setModal(null); setNotice("Creator test plan activated. No payment was charged."); }}'
+          new='onUnlock={() => { setModal(null); }}'
+          if old not in s:
+              raise SystemExit('expected callback not found')
+          p.write_text(s.replace(old,new))
+          PY
+          git config user.name "Core Cricket Update"
+          git config user.email "actions@github.com"
+          git add components/core-cricket-app.tsx
+          git commit -m "Remove obsolete paid live-plan callback"
+          git push origin production-feature-update
