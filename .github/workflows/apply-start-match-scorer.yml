@@ -1,0 +1,51 @@
+name: Apply Start Match Scorer Gate
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-start-match-scorer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Core Cricket start-match flow
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p=Path('components/core-cricket-app.tsx')
+          s=p.read_text()
+
+          old='''      if (savedType === "team") { setManageTab("teams"); go("manage"); }\n      if (savedType === "player") setPlayerTeamId(null);'''
+          new='''      if (savedType === "team") { setManageTab("teams"); go("manage"); }\n      if (savedType === "player") setPlayerTeamId(null);\n      if (savedType === "match" && result.item?.id) {\n        setSelectedMatchId(result.item.id);\n        setManageTab("matches");\n        const tournamentId = Number(fields.tournamentId) || null;\n        if (tournamentId) { setSelectedTournamentId(tournamentId); setTournamentHubOpen(true); }\n        go("manage");\n        setNotice("Match created. Tap Start Match and select an official scorer.");\n      }'''
+          if old not in s: raise SystemExit('submitEntity patch target not found')
+          s=s.replace(old,new,1)
+
+          old='''  const [setupMatchId, setSetupMatchId] = useState<number | null>(null);\n  const [newGroup, setNewGroup] = useState("");'''
+          new='''  const [setupMatchId, setSetupMatchId] = useState<number | null>(null);\n  const [startMatchId, setStartMatchId] = useState<number | null>(null);\n  const [startScorerId, setStartScorerId] = useState<number | null>(null);\n  const [newGroup, setNewGroup] = useState("");'''
+          if old not in s: raise SystemExit('state patch target not found')
+          s=s.replace(old,new,1)
+
+          old='''  const setupMatch = tournamentMatches.find((match) => match.id === setupMatchId);\n  if (setupMatch) return <MatchSetup data={data} match={setupMatch} officialScorer={officialScorer} canManageTeam={canManageTeam} canManageBoth={canManageTournament} onBack={() => setSetupMatchId(null)} onRefresh={onRefresh} onStartScoring={() => onOpenMatch(setupMatch.id)} />;'''
+          new='''  const startMatch = tournamentMatches.find((match) => match.id === startMatchId);\n  if (startMatch) {\n    const selectedScorer = scorers.find((scorer) => scorer.id === startScorerId);\n    return <div className="page match-setup"><div className="profile-subtabs"><button onClick={() => { setStartMatchId(null); setStartScorerId(null); }}>← Matches</button><button className="active">Start Match</button></div><SectionHead eyebrow={`${startMatch.overs} OVERS · OFFICIAL SCORER`} title={`${getTeam(data, startMatch.teamAId)?.shortName} vs ${getTeam(data, startMatch.teamBId)?.shortName}`} /><section className="card lineup-card"><CardTitle eyebrow="STEP 1" title="Choose the scorer who will start this match" /><p>An official tournament scorer must be selected before Playing XI, toss and live scoring can begin.</p><Field label="Official scorer"><select value={startScorerId ?? ""} onChange={(e) => setStartScorerId(Number(e.target.value))} required><option value="" disabled>Select official scorer</option>{scorers.map((scorer) => <option key={scorer.id} value={scorer.id}>{scorer.name}{scorer.phone ? ` · ${scorer.phone}` : scorer.email ? ` · ${scorer.email}` : ""}</option>)}</select></Field>{selectedScorer && <div className="official-scorer-banner"><b>✓ {selectedScorer.name}</b><span>Selected to start and score this match.</span></div>}<div className="lineup-footer"><b>{selectedScorer ? "Scorer confirmed" : "Select a scorer to continue"}</b><button className="primary-button" disabled={!selectedScorer} onClick={() => { setSetupMatchId(startMatch.id); setStartMatchId(null); }}>Continue to Playing XI →</button></div></section></div>;\n  }\n\n  const setupMatch = tournamentMatches.find((match) => match.id === setupMatchId);\n  if (setupMatch) return <MatchSetup data={data} match={setupMatch} officialScorer={officialScorer} canManageTeam={canManageTeam} canManageBoth={canManageTournament} onBack={() => setSetupMatchId(null)} onRefresh={onRefresh} onStartScoring={() => onOpenMatch(setupMatch.id)} />;'''
+          if old not in s: raise SystemExit('setup patch target not found')
+          s=s.replace(old,new,1)
+
+          old='''<button className="hub-match-main" onClick={() => match.status === "Upcoming" && canSetup ? setSetupMatchId(match.id) : onOpenMatch(match.id)}><span>{match.status}</span><b>{getTeam(data, match.teamAId)?.shortName} vs {getTeam(data, match.teamBId)?.shortName}</b><small>{match.result ?? `${match.runs}/${match.wickets} · ${overs(match.balls)} overs`}</small><em>{match.status === "Upcoming" ? (canSetup ? "Start match · select playing XI →" : "Lineups pending →") : (officialScorer ? "Open scoring →" : "View scorecard →")}</em></button>'''
+          new='''<button className="hub-match-main" onClick={() => { if (match.status === "Upcoming" && canSetup) { if (!scorers.length) { window.alert("Assign at least one official tournament scorer before starting this match."); return; } setStartScorerId(null); setStartMatchId(match.id); return; } onOpenMatch(match.id); }}><span>{match.status}</span><b>{getTeam(data, match.teamAId)?.shortName} vs {getTeam(data, match.teamBId)?.shortName}</b><small>{match.result ?? `${match.runs}/${match.wickets} · ${overs(match.balls)} overs`}</small><em>{match.status === "Upcoming" ? (canSetup ? "Start Match · choose scorer →" : "Lineups pending →") : (officialScorer ? "Open scoring →" : "View scorecard →")}</em></button>'''
+          if old not in s: raise SystemExit('match button patch target not found')
+          s=s.replace(old,new,1)
+
+          p.write_text(s)
+          PY
+
+          git config user.name "Core Cricket Update"
+          git config user.email "actions@github.com"
+          git add components/core-cricket-app.tsx
+          git rm .github/workflows/apply-start-match-scorer.yml
+          git commit -m "Require scorer selection before Start Match"
+          git push
