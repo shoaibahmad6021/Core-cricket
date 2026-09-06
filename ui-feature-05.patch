@@ -1,0 +1,54 @@
+pan className="rank">0{index + 1}</span><Avatar player={player} /><div><b>{player.name}</b><span>{getTeam(data, player.teamId ?? 0)?.shortName} · {result?.matches.size ?? 0} completed match{result?.matches.size === 1 ? "" : "es"}</span></div><strong>{result?.wickets ?? 0}<small> WICKETS</small></strong></button>)}{topBowlers.length === 0 && <Empty text="Top bowlers appear after taking wickets in a completed match." />}</div></section>
++    <section className="card leaders"><CardTitle eyebrow="BEST PERFORMANCES" title="Overall app leaders" action={<button onClick={() => onNavigate("players")}>Full stats</button>} /><div className="leader-group"><h3>Top run scorers</h3>{topBatters.map(({ player, result }, index) => <button className="leader-row" key={player.id} onClick={() => onNavigate("players")}><span className="rank">0{index + 1}</span><Avatar player={player} /><div><b>{player.name}</b><span>{getTeam(data, player.teamId ?? 0)?.shortName} · {result?.matches.size ?? 0} completed match{result?.matches.size === 1 ? "" : "es"}</span></div><strong>{result?.runs ?? 0}<small> RUNS</small></strong></button>)}{topBatters.length === 0 && <Empty text="Top scorers appear after a completed match." />}</div><div className="leader-group bowler-leaders"><h3>Top bowlers</h3>{topBowlers.map(({ player, result }, index) => <button className="leader-row" key={player.id} onClick={() => onNavigate("players")}><span className="rank">0{index + 1}</span><Avatar player={player} /><div><b>{player.name}</b><span>{getTeam(data, player.teamId ?? 0)?.shortName} · {result?.matches.size ?? 0} completed match{result?.matches.size === 1 ? "" : "es"}</span></div><strong>{result?.wickets ?? 0}<small> WICKETS</small></strong></button>)}{topBowlers.length === 0 && <Empty text="Top bowlers appear after taking wickets in a completed match." />}</div></section>
+     <section className="season-card"><span>YOUR 2026 SEASON</span><h2>Every ball builds the story.</h2><div><div><strong>{data.matches.length}</strong><span>MATCHES</span></div><div><strong>{data.teams.length}</strong><span>TEAMS</span></div><div><strong>{data.players.length}</strong><span>PLAYERS</span></div></div><button onClick={() => onNavigate("players")}>Explore season stats →</button></section>
+   </div>{!userPreview && <section className="home-team-action"><div><span>BUILD YOUR CLUB</span><h2>Add a new cricket team</h2><p>Create the team first, then use its Add Player tab to build the squad.</p></div><button onClick={onAddTeam}><b>＋</b> Add Team</button></section>}</div>;
+ }
+@@ -341,22 +398,71 @@
+ function TournamentHub({ data, tournamentId, user, siteAdmin, officialScorer, canManageTeam, onBack, onRefresh, onUpload, onAdd, onOpenMatch, onAssignPlayer, onAddPlayer }: { data: Data; tournamentId: number; user: CoreCricketUser; siteAdmin: boolean; officialScorer: boolean; canManageTeam: (teamId: number) => boolean; onBack: () => void; onRefresh: () => Promise<void>; onUpload: (kind: MediaKind, id: number, file?: File, name?: string) => Promise<void>; onAdd: (type: ModalType) => void; onOpenMatch: (id: number) => void; onAssignPlayer: (teamId: number, playerId: number) => Promise<void>; onAddPlayer: (teamId: number, fields: Record<string, unknown>) => Promise<void> }) {
+   const [openTeamId, setOpenTeamId] = useState<number | null>(null);
+   const [setupMatchId, setSetupMatchId] = useState<number | null>(null);
++  const [newGroup, setNewGroup] = useState("");
+   const tournament = data.tournaments.find((item) => item.id === tournamentId);
+   const teamIds = (data.tournamentTeams ?? []).filter((item) => item.tournamentId === tournamentId).map((item) => item.teamId);
+   const tournamentTeams = data.teams.filter((team) => teamIds.includes(team.id));
+   const tournamentMatches = data.matches.filter((match) => match.tournamentId === tournamentId);
+   const sponsors = (data.tournamentSponsors ?? []).filter((item) => item.tournamentId === tournamentId);
+   const scorers = (data.tournamentScorers ?? []).filter((item) => item.tournamentId === tournamentId);
++  const groups = (data.tournamentGroups ?? []).filter((g) => g.tournamentId === tournamentId);
++  const groupTeams = (data.tournamentGroupTeams ?? []).filter((g) => g.tournamentId === tournamentId);
+   const isCreator = !siteAdmin && Boolean((tournament?.createdByEmail && tournament.createdByEmail.toLowerCase() === user.email.toLowerCase()) || (tournament?.createdByName && tournament.createdByName.toLowerCase() === user.displayName.toLowerCase()));
++  const canManageTournament = siteAdmin || isCreator;
+   if (!tournament) return <div className="page"><Empty text="Tournament not found." /></div>;
++
++  async function saveControl(payload: Record<string, unknown>) {
++    const response = await fetch("/api/entities", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(payload) });
++    const body = await response.json() as { error?:string };
++    if (!response.ok) throw new Error(body.error || "Unable to update tournament");
++    await onRefresh();
++  }
++  async function addGroup() {
++    const name=newGroup.trim(); if(!name)return;
++    try { await saveControl({type:"tournamentGroup",tournamentId,name}); setNewGroup(""); }
++    catch(e){window.alert(e instanceof Error?e.message:"Unable to add group");}
++  }
++  async function assignGroup(teamId:number, groupId:number) {
++    try { await saveControl({type:"tournamentGroupTeam",tournamentId,teamId,groupId}); }
++    catch(e){window.alert(e instanceof Error?e.message:"Unable to assign group");}
++  }
++  async function setMatchMvp(matchId:number, playerId:number) {
++    try { await saveControl({type:"matchMvp",tournamentId,matchId,playerId}); }
++    catch(e){window.alert(e instanceof Error?e.message:"Unable to save match MVP");}
++  }
++  async function setTournamentMvp(playerId:number) {
++    try { await saveControl({type:"tournamentMvp",tournamentId,playerId}); }
++    catch(e){window.alert(e instanceof Error?e.message:"Unable to save tournament MVP");}
++  }
++
+   const setupMatch = tournamentMatches.find((match) => match.id === setupMatchId);
+-  if (setupMatch) return <MatchSetup data={data} match={setupMatch} officialScorer={officialScorer} canManageTeam={canManageTeam} canManageBoth={siteAdmin || isCreator} onBack={() => setSetupMatchId(null)} onRefresh={onRefresh} onStartScoring={() => onOpenMatch(setupMatch.id)} />;
++  if (setupMatch) return <MatchSetup data={data} match={setupMatch} officialScorer={officialScorer} canManageTeam={canManageTeam} canManageBoth={canManageTournament} onBack={() => setSetupMatchId(null)} onRefresh={onRefresh} onStartScoring={() => onOpenMatch(setupMatch.id)} />;
++
++  const tournamentAutoMvp=automaticTournamentMvp(data,tournamentId);
++  const tournamentOverride=(data.tournamentMvpOverrides??[]).find(x=>x.tournamentId===tournamentId);
++  const tournamentMvp=tournamentOverride?getPlayer(data,tournamentOverride.playerId):tournamentAutoMvp?.player;
++  const eligibleTournamentPlayers=data.players.filter(p=>t
