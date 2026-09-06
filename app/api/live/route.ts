@@ -1,16 +1,20 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { deliveries, liveSessions, matches, players, teams, tournamentScorers, tournaments } from "@/db/schema";
+import { deliveries, liveSessions, matches, players, scoringHandoffs, teams, tournamentScorers, tournaments } from "@/db/schema";
 import { getChatGPTUser } from "@/app/chatgpt-auth";
 import { isCoreCricketAdmin } from "@/app/admin-auth";
 
-async function canBroadcast(matchId: number) {
+async function canBroadcast(matchId: number, handoffToken?: string) {
   const user = await getChatGPTUser();
   if (!user) return false;
   if (isCoreCricketAdmin(user)) return true;
   const db = getDb();
   const [match] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
   if (!match) return false;
+  if (handoffToken) {
+    const [handoff] = await db.select().from(scoringHandoffs).where(and(eq(scoringHandoffs.token, handoffToken), eq(scoringHandoffs.matchId, matchId), eq(scoringHandoffs.active, true))).limit(1);
+    if (handoff) return true;
+  }
   const name = (user.fullName || user.displayName).trim().toLowerCase();
   const email = user.email.trim().toLowerCase();
   if (match.tournamentId) {
@@ -24,9 +28,9 @@ async function canBroadcast(matchId: number) {
 }
 
 export async function POST(request: Request) {
-  const { matchId } = await request.json() as { matchId?: number };
+  const { matchId, handoffToken } = await request.json() as { matchId?: number; handoffToken?: string };
   if (!matchId) return Response.json({ error: "Choose a match" }, { status: 400 });
-  if (!(await canBroadcast(matchId))) return Response.json({ error: "Live broadcast is available to site admins, tournament creators, official scorers, team captains and team admins." }, { status: 403 });
+  if (!(await canBroadcast(matchId, handoffToken))) return Response.json({ error: "Live broadcast is available to site admins, tournament creators, assigned scorers, team captains and team admins." }, { status: 403 });
   const token = crypto.randomUUID().replaceAll("-", "").slice(0, 20);
   const publishKey = crypto.randomUUID().replaceAll("-", "");
   const db = getDb();
