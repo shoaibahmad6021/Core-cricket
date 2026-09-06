@@ -1,0 +1,235 @@
+name: Apply 7s Startup Impact
+
+on:
+  push:
+    paths:
+      - '.github/trigger-7s-startup-impact.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply 7-second cinematic startup
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          app = Path('components/core-cricket-app.tsx')
+          s = app.read_text()
+          s = s.replace('window.setTimeout(() => setShowSplash(false), 10000)', 'window.setTimeout(() => setShowSplash(false), 7000)')
+          app.write_text(s)
+
+          css = Path('app/globals.css')
+          c = css.read_text()
+          marker = '/* CORE CRICKET 7S REALISTIC PITCH IMPACT */'
+          if marker in c:
+              c = c.split(marker)[0].rstrip() + '\n'
+          c += r'''
+
+/* CORE CRICKET 7S REALISTIC PITCH IMPACT */
+.startup-splash.cinematic-launch {
+  --impact-time: 2.05s;
+  --crack: #332719;
+  --pitch-dry: #9a7a4f;
+  --pitch-light: #c7a66d;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 81%, rgba(179,137,72,.3), transparent 28%),
+    radial-gradient(circle at 12% 20%, rgba(255,248,210,.18), transparent 18%),
+    radial-gradient(circle at 88% 20%, rgba(255,248,210,.18), transparent 18%),
+    linear-gradient(180deg,#030806 0%,#07120c 48%,#142218 72%,#1d2b1c 100%) !important;
+}
+.startup-splash.cinematic-launch::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(112deg,transparent 8%,rgba(255,248,220,.18) 11%,transparent 17%),
+    linear-gradient(248deg,transparent 8%,rgba(255,248,220,.18) 11%,transparent 17%);
+  opacity:.8;
+  animation:stadiumPulse 7s ease-out both;
+}
+.cinematic-launch .cinematic-logo {
+  z-index:10;
+  transform-origin:50% 86%;
+  animation:coreSevenDrop 7s cubic-bezier(.18,.72,.16,1) both !important;
+  filter:drop-shadow(0 24px 30px rgba(0,0,0,.48));
+}
+.cinematic-launch .cinematic-logo img {
+  animation:logoImpactGlow 7s ease-out both !important;
+}
+.cinematic-launch .launch-lights i {
+  animation:stadiumLightSweep 7s ease-out both !important;
+}
+.cinematic-launch .pitch-strip {
+  position:absolute !important;
+  left:50% !important;
+  bottom:0 !important;
+  width:min(72vw,680px) !important;
+  height:39vh !important;
+  transform:translateX(-50%) perspective(550px) rotateX(58deg) !important;
+  transform-origin:bottom center !important;
+  border-radius:3px !important;
+  background:
+    repeating-linear-gradient(88deg,rgba(74,54,31,.08) 0 2px,transparent 2px 9px),
+    linear-gradient(180deg,var(--pitch-light),var(--pitch-dry) 42%,#6f5739 100%) !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.04),0 -16px 45px rgba(210,172,98,.1) !important;
+  opacity:1 !important;
+}
+/* Remove the old black-hole/crater look completely. */
+.cinematic-launch .crater {
+  display:none !important;
+  opacity:0 !important;
+  background:none !important;
+  box-shadow:none !important;
+}
+.cinematic-launch .pitch-cracks {
+  position:absolute !important;
+  left:50% !important;
+  bottom:10.8vh !important;
+  width:min(72vw,690px) !important;
+  height:25vh !important;
+  transform:translateX(-50%) !important;
+  z-index:7 !important;
+  pointer-events:none;
+}
+.cinematic-launch .pitch-cracks::before,
+.cinematic-launch .pitch-cracks::after {
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:36%;
+  width:4px;
+  height:62%;
+  background:linear-gradient(to top,rgba(24,18,12,.95),rgba(58,42,24,.85) 58%,transparent);
+  transform-origin:bottom;
+  opacity:0;
+  clip-path:polygon(38% 0,100% 13%,54% 28%,92% 43%,35% 57%,68% 72%,20% 100%,0 78%,38% 62%,0 46%,46% 31%,9% 14%);
+  animation:mainCrack 7s ease-out both;
+}
+.cinematic-launch .pitch-cracks::before { transform:rotate(-18deg); }
+.cinematic-launch .pitch-cracks::after { transform:rotate(21deg) scaleY(.9); }
+.cinematic-launch .pitch-cracks > i {
+  position:absolute !important;
+  left:50% !important;
+  bottom:38% !important;
+  width:2px !important;
+  height:calc(68px + (var(--crack) * 5px)) !important;
+  border-radius:50% 20% 65% 10% !important;
+  background:linear-gradient(to top,#25190e 0%,#49331c 55%,rgba(80,59,34,.08) 100%) !important;
+  box-shadow:0 0 1px rgba(0,0,0,.7) !important;
+  transform-origin:bottom !important;
+  transform:rotate(calc(-82deg + (var(--crack) * 9.5deg))) scaleY(0) !important;
+  opacity:0 !important;
+  animation:branchCrack 7s cubic-bezier(.12,.75,.18,1) both !important;
+  animation-delay:calc(var(--crack) * 14ms) !important;
+}
+.cinematic-launch .impact-zone > i {
+  z-index:8 !important;
+  width:calc(5px + (var(--piece) % 7) * 2px) !important;
+  height:calc(5px + (var(--piece) % 5) * 2px) !important;
+  border-radius:30% 55% 38% 45% !important;
+  background:linear-gradient(135deg,#7c6039,#352517 70%) !important;
+  box-shadow:0 0 0 1px rgba(175,132,73,.16) !important;
+  opacity:0;
+  animation:earthDebris 7s cubic-bezier(.1,.7,.15,1) both !important;
+  animation-delay:calc(var(--piece) * 9ms) !important;
+}
+.cinematic-launch .smoke-plumes > i {
+  background:radial-gradient(circle,rgba(206,181,135,.42),rgba(110,96,70,.24) 45%,transparent 72%) !important;
+  filter:blur(7px) !important;
+  animation:dustRiseSeven 7s ease-out both !important;
+  animation-delay:calc(var(--smoke) * 28ms) !important;
+}
+.cinematic-launch .impact-flash {
+  background:radial-gradient(circle at 50% 72%,rgba(255,244,190,.94),rgba(255,189,78,.42) 12%,transparent 34%) !important;
+  mix-blend-mode:screen;
+  animation:impactFlashSeven 7s ease-out both !important;
+}
+.cinematic-launch > small,
+.cinematic-launch .creator-credit,
+.cinematic-launch .gta-corner-badge {
+  animation-duration:7s !important;
+}
+@keyframes coreSevenDrop {
+  0% { transform:translate3d(0,-118vh,0) scale(.48) rotate(-3deg); opacity:0; filter:blur(6px) drop-shadow(0 0 0 transparent); }
+  8% { opacity:1; }
+  23% { transform:translate3d(0,-38vh,0) scale(.72) rotate(-1deg); filter:blur(1px) drop-shadow(0 18px 22px rgba(0,0,0,.3)); }
+  29.2% { transform:translate3d(0,2.5vh,0) scale(1.08) rotate(.5deg); }
+  31% { transform:translate3d(0,-2.2vh,0) scale(.98) rotate(0); }
+  34% { transform:translate3d(0,0,0) scale(1.015); }
+  38%,82% { transform:translate3d(0,0,0) scale(1); opacity:1; filter:drop-shadow(0 20px 30px rgba(0,0,0,.5)) drop-shadow(0 0 18px rgba(255,204,112,.22)); }
+  92% { transform:scale(1.02); opacity:1; }
+  100% { transform:scale(1.035); opacity:0; }
+}
+@keyframes logoImpactGlow {
+  0%,25% { filter:brightness(.76) saturate(.88); }
+  29% { filter:brightness(1.95) saturate(1.2) drop-shadow(0 0 22px rgba(255,219,140,.85)); }
+  35%,82% { filter:brightness(1.08) saturate(1.04) drop-shadow(0 0 8px rgba(255,212,128,.24)); }
+  100% { filter:brightness(1.15); }
+}
+@keyframes branchCrack {
+  0%,28.8% { transform:rotate(calc(-82deg + (var(--crack) * 9.5deg))) scaleY(0); opacity:0; }
+  31% { opacity:.95; }
+  39%,100% { transform:rotate(calc(-82deg + (var(--crack) * 9.5deg))) scaleY(1); opacity:.92; }
+}
+@keyframes mainCrack {
+  0%,28.6% { opacity:0; scale:1 .05; }
+  32% { opacity:1; scale:1 1; }
+  100% { opacity:.94; scale:1 1; }
+}
+@keyframes earthDebris {
+  0%,28.5% { transform:translate3d(0,0,0) rotate(0deg) scale(.2); opacity:0; }
+  30% { opacity:1; }
+  42% { transform:translate3d(calc((var(--piece) - 21) * 4.4px),calc(-85px - (var(--piece) % 9) * 13px),0) rotate(calc(var(--piece) * 31deg)) scale(1); opacity:.96; }
+  63% { transform:translate3d(calc((var(--piece) - 21) * 6px),calc(26px + (var(--piece) % 8) * 8px),0) rotate(calc(var(--piece) * 62deg)) scale(.82); opacity:.55; }
+  78%,100% { opacity:0; }
+}
+@keyframes dustRiseSeven {
+  0%,28% { transform:translate3d(0,22px,0) scale(.2); opacity:0; }
+  32% { opacity:.55; }
+  50% { transform:translate3d(calc((var(--smoke) - 7) * 10px),-75px,0) scale(1.35); opacity:.34; }
+  72%,100% { transform:translate3d(calc((var(--smoke) - 7) * 16px),-145px,0) scale(2); opacity:0; }
+}
+@keyframes impactFlashSeven {
+  0%,28.5% { opacity:0; transform:scale(.4); }
+  29.7% { opacity:1; transform:scale(1.2); }
+  33% { opacity:.36; transform:scale(1.55); }
+  41%,100% { opacity:0; transform:scale(2); }
+}
+@keyframes stadiumLightSweep {
+  0% { opacity:.34; filter:brightness(.65); }
+  22% { opacity:.78; filter:brightness(1.1); }
+  30% { opacity:1; filter:brightness(1.9); }
+  42%,84% { opacity:.82; filter:brightness(1.15); }
+  100% { opacity:.2; filter:brightness(.8); }
+}
+@keyframes stadiumPulse {
+  0%,18% { opacity:.42; }
+  30% { opacity:1; }
+  48%,86% { opacity:.72; }
+  100% { opacity:0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-launch .cinematic-logo,
+  .cinematic-launch .cinematic-logo img,
+  .cinematic-launch .pitch-cracks > i,
+  .cinematic-launch .impact-zone > i,
+  .cinematic-launch .smoke-plumes > i,
+  .cinematic-launch .impact-flash { animation-duration:.01ms !important; animation-delay:0ms !important; }
+}
+'''
+          css.write_text(c)
+          PY
+      - name: Commit startup update
+        run: |
+          git config user.name "Core Cricket Update"
+          git config user.email "actions@github.com"
+          git add components/core-cricket-app.tsx app/globals.css
+          git commit -m "Make startup a 7-second realistic pitch impact" || exit 0
+          git push
