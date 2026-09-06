@@ -2,103 +2,20 @@
   "version": "7",
   "dialect": "sqlite",
   "entries": [
-    {
-      "idx": 0,
-      "version": "6",
-      "when": 1787410962512,
-      "tag": "0000_amused_overlord",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1787417637535,
-      "tag": "0001_slimy_punisher",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1787418319829,
-      "tag": "0002_parched_giant_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1787420265751,
-      "tag": "0003_daily_lord_tyger",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1787421090899,
-      "tag": "0004_acoustic_dracula",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1787421997376,
-      "tag": "0005_fine_ghost_rider",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1787425957440,
-      "tag": "0006_glossy_obadiah_stane",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "6",
-      "when": 1787427883009,
-      "tag": "0007_tidy_mariko_yashida",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "6",
-      "when": 1787431481985,
-      "tag": "0008_wooden_king_cobra",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "6",
-      "when": 1787487433652,
-      "tag": "0009_dapper_agent_zero",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "6",
-      "when": 1787488005046,
-      "tag": "0010_wealthy_misty_knight",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "6",
-      "when": 1787604967908,
-      "tag": "0011_fresh_start",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "6",
-      "when": 1788662492124,
-      "tag": "0012_tournament_groups_mvp",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "6",
-      "when": 1788670200000,
-      "tag": "0013_repair_tournament_group_sequence",
-      "breakpoints": true
-    }
+    {"idx":0,"version":"6","when":1787410962512,"tag":"0000_amused_overlord","breakpoints":true},
+    {"idx":1,"version":"6","when":1787417637535,"tag":"0001_slimy_punisher","breakpoints":true},
+    {"idx":2,"version":"6","when":1787418319829,"tag":"0002_parched_giant_man","breakpoints":true},
+    {"idx":3,"version":"6","when":1787420265751,"tag":"0003_daily_lord_tyger","breakpoints":true},
+    {"idx":4,"version":"6","when":1787421090899,"tag":"0004_acoustic_dracula","breakpoints":true},
+    {"idx":5,"version":"6","when":1787421997376,"tag":"0005_fine_ghost_rider","breakpoints":true},
+    {"idx":6,"version":"6","when":1787425957440,"tag":"0006_glossy_obadiah_stane","breakpoints":true},
+    {"idx":7,"version":"6","when":1787427883009,"tag":"0007_tidy_mariko_yashida","breakpoints":true},
+    {"idx":8,"version":"6","when":1787431481985,"tag":"0008_wooden_king_cobra","breakpoints":true},
+    {"idx":9,"version":"6","when":1787487433652,"tag":"0009_dapper_agent_zero","breakpoints":true},
+    {"idx":10,"version":"6","when":1787488005046,"tag":"0010_wealthy_misty_knight","breakpoints":true},
+    {"idx":11,"version":"6","when":1787604967908,"tag":"0011_fresh_start","breakpoints":true},
+    {"idx":12,"version":"6","when":1788662492124,"tag":"0012_tournament_groups_mvp","breakpoints":true},
+    {"idx":13,"version":"6","when":1788670200000,"tag":"0013_repair_tournament_group_sequence","breakpoints":true},
+    {"idx":14,"version":"6","when":1788671400000,"tag":"0014_repair_all_serial_sequences","breakpoints":true}
   ]
 }
