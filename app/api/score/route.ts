@@ -65,11 +65,11 @@ export async function POST(request: Request) {
     if (body.action === "resolveTie") {
       if (body.tieResolution === "walkoverA" || body.tieResolution === "walkoverB") {
         const winner = body.tieResolution === "walkoverA" ? "Team A" : "Team B";
-        const [updated] = await db.update(matches).set({ status: "Completed", result: `${winner} won by walkover`, tieResolution: "Walkover" }).where(eq(matches.id, match.id)).returning();
+        const [updated] = await db.update(matches).set({ status: "Completed", result: `${winner} won by walkover`, winnerTeamId: body.tieResolution === "walkoverA" ? match.teamAId : match.teamBId, tieResolution: "Walkover" }).where(eq(matches.id, match.id)).returning();
         return Response.json({ match: updated });
       }
       if (body.tieResolution === "sharedPoints") {
-        const [updated] = await db.update(matches).set({ status: "Completed", result: "Match tied — 1 point each", tieResolution: "Shared points" }).where(eq(matches.id, match.id)).returning();
+        const [updated] = await db.update(matches).set({ status: "Completed", result: "Match tied — 1 point each", winnerTeamId: null, tieResolution: "Shared points" }).where(eq(matches.id, match.id)).returning();
         return Response.json({ match: updated });
       }
       const [updated] = await db.update(matches).set({ innings: 3, overs: 1, runs: 0, wickets: 0, balls: 0, target: null, battingTeamId: match.teamAId, bowlingTeamId: match.teamBId, strikerId: null, nonStrikerId: null, bowlerId: null, status: "Super Over", tieResolution: "Super Over", awaitingBowler: false }).where(eq(matches.id, match.id)).returning();
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
 
     if (body.action === "endInnings") {
       if ((match.innings ?? 1) === 1) {
-        const [updated] = await db.update(matches).set({ innings: 2, firstInningsRuns: match.runs, firstInningsWickets: match.wickets, target: match.runs + 1, battingTeamId: match.bowlingTeamId, bowlingTeamId: match.battingTeamId, runs: 0, wickets: 0, balls: 0, strikerId: null, nonStrikerId: null, bowlerId: null, awaitingBowler: false, status: "Innings break" }).where(eq(matches.id, match.id)).returning();
+        const [updated] = await db.update(matches).set({ innings: 2, firstInningsRuns: match.runs, firstInningsWickets: match.wickets, firstInningsBalls: match.balls, firstInningsBattingTeamId: match.battingTeamId, target: match.runs + 1, battingTeamId: match.bowlingTeamId, bowlingTeamId: match.battingTeamId, runs: 0, wickets: 0, balls: 0, strikerId: null, nonStrikerId: null, bowlerId: null, awaitingBowler: false, status: "Innings break" }).where(eq(matches.id, match.id)).returning();
         return Response.json({ match: updated, needsPlayers: true });
       }
       if (match.innings === 3) {
@@ -89,7 +89,8 @@ export async function POST(request: Request) {
       if (match.runs === reference && match.innings === 2) return Response.json({ tie: true, match });
       const battingName = match.battingTeamId === match.teamAId ? "Team A" : "Team B";
       const result = match.runs > reference ? `${battingName} won` : `${battingName === "Team A" ? "Team B" : "Team A"} won`;
-      const [updated] = await db.update(matches).set({ status: "Completed", result }).where(eq(matches.id, match.id)).returning();
+      const winnerTeamId = match.runs > reference ? match.battingTeamId : match.bowlingTeamId;
+      const [updated] = await db.update(matches).set({ status: "Completed", result, winnerTeamId }).where(eq(matches.id, match.id)).returning();
       return Response.json({ match: updated });
     }
 
