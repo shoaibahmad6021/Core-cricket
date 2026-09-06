@@ -1,1 +1,0 @@
-ALTER TABLE `live_sessions` ADD `publish_key` text DEFAULT '' NOT NULL;

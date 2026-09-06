@@ -1,1 +1,0 @@
-ALTER TABLE `matches` ADD `awaiting_bowler` integer DEFAULT false NOT NULL;
