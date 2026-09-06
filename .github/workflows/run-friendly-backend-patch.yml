@@ -1,0 +1,24 @@
+name: Run Friendly Backend Patch
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message == 'Run friendly backend patch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply patch
+        run: python3 scripts/fix-friendly-score-backend.py
+      - name: Commit patch
+        run: |
+          git config user.name "Core Cricket Update"
+          git config user.email "actions@github.com"
+          git add app/api/score/route.ts
+          git commit -m "Allow friendly matches to start scoring without tournament"
+          git push
