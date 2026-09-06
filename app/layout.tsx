@@ -16,6 +16,7 @@ import "./scoring-transfer.css";
 import "./gta-falcons-splash.css";
 import "./cinematic-v2.css";
 import "./regular-colorful.css";
+import "./startup-impact-final.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://core-cricket.vercel.app"),
