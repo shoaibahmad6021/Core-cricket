@@ -1,0 +1,17 @@
+SELECT setval(pg_get_serial_sequence('teams','id'), COALESCE((SELECT MAX(id) FROM teams), 1), (SELECT MAX(id) IS NOT NULL FROM teams));
+SELECT setval(pg_get_serial_sequence('players','id'), COALESCE((SELECT MAX(id) FROM players), 1), (SELECT MAX(id) IS NOT NULL FROM players));
+SELECT setval(pg_get_serial_sequence('tournaments','id'), COALESCE((SELECT MAX(id) FROM tournaments), 1), (SELECT MAX(id) IS NOT NULL FROM tournaments));
+SELECT setval(pg_get_serial_sequence('matches','id'), COALESCE((SELECT MAX(id) FROM matches), 1), (SELECT MAX(id) IS NOT NULL FROM matches));
+SELECT setval(pg_get_serial_sequence('deliveries','id'), COALESCE((SELECT MAX(id) FROM deliveries), 1), (SELECT MAX(id) IS NOT NULL FROM deliveries));
+SELECT setval(pg_get_serial_sequence('match_players','id'), COALESCE((SELECT MAX(id) FROM match_players), 1), (SELECT MAX(id) IS NOT NULL FROM match_players));
+SELECT setval(pg_get_serial_sequence('tournament_sponsors','id'), COALESCE((SELECT MAX(id) FROM tournament_sponsors), 1), (SELECT MAX(id) IS NOT NULL FROM tournament_sponsors));
+SELECT setval(pg_get_serial_sequence('tournament_scorers','id'), COALESCE((SELECT MAX(id) FROM tournament_scorers), 1), (SELECT MAX(id) IS NOT NULL FROM tournament_scorers));
+SELECT setval(pg_get_serial_sequence('tournament_teams','id'), COALESCE((SELECT MAX(id) FROM tournament_teams), 1), (SELECT MAX(id) IS NOT NULL FROM tournament_teams));
+SELECT setval(pg_get_serial_sequence('tournament_groups','id'), COALESCE((SELECT MAX(id) FROM tournament_groups), 1), (SELECT MAX(id) IS NOT NULL FROM tournament_groups));
+SELECT setval(pg_get_serial_sequence('tournament_group_teams','id'), COALESCE((SELECT MAX(id) FROM tournament_group_teams), 1), (SELECT MAX(id) IS NOT NULL FROM tournament_group_teams));
+SELECT setval(pg_get_serial_sequence('match_mvp_overrides','id'), COALESCE((SELECT MAX(id) FROM match_mvp_overrides), 1), (SELECT MAX(id) IS NOT NULL FROM match_mvp_overrides));
+SELECT setval(pg_get_serial_sequence('tournament_mvp_overrides','id'), COALESCE((SELECT MAX(id) FROM tournament_mvp_overrides), 1), (SELECT MAX(id) IS NOT NULL FROM tournament_mvp_overrides));
+SELECT setval(pg_get_serial_sequence('live_sessions','id'), COALESCE((SELECT MAX(id) FROM live_sessions), 1), (SELECT MAX(id) IS NOT NULL FROM live_sessions));
+SELECT setval(pg_get_serial_sequence('scoring_handoffs','id'), COALESCE((SELECT MAX(id) FROM scoring_handoffs), 1), (SELECT MAX(id) IS NOT NULL FROM scoring_handoffs));
+SELECT setval(pg_get_serial_sequence('app_users','id'), COALESCE((SELECT MAX(id) FROM app_users), 1), (SELECT MAX(id) IS NOT NULL FROM app_users));
+SELECT setval(pg_get_serial_sequence('app_sessions','id'), COALESCE((SELECT MAX(id) FROM app_sessions), 1), (SELECT MAX(id) IS NOT NULL FROM app_sessions));
