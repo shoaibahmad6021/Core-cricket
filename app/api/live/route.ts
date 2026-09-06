@@ -1,11 +1,32 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { liveSessions, matches, teams, tournaments } from "@/db/schema";
-import { requireAdminApi } from "@/app/admin-auth";
+import { liveSessions, matches, players, teams, tournamentScorers, tournaments } from "@/db/schema";
+import { getChatGPTUser } from "@/app/chatgpt-auth";
+import { isCoreCricketAdmin } from "@/app/admin-auth";
+
+async function canBroadcast(matchId: number) {
+  const user = await getChatGPTUser();
+  if (!user) return false;
+  if (isCoreCricketAdmin(user)) return true;
+  const db = getDb();
+  const [match] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
+  if (!match) return false;
+  const name = (user.fullName || user.displayName).trim().toLowerCase();
+  const email = user.email.trim().toLowerCase();
+  if (match.tournamentId) {
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, match.tournamentId)).limit(1);
+    if (tournament && (tournament.createdByEmail.trim().toLowerCase() === email || tournament.createdByName.trim().toLowerCase() === name)) return true;
+    const scorers = await db.select().from(tournamentScorers).where(eq(tournamentScorers.tournamentId, match.tournamentId));
+    if (scorers.some((s) => s.email.trim().toLowerCase() === email || s.name.trim().toLowerCase() === name)) return true;
+  }
+  const roster = await db.select().from(players);
+  return roster.some((p) => [match.teamAId, match.teamBId].includes(p.teamId ?? 0) && p.name.trim().toLowerCase() === name && ["captain", "team admin"].includes((p.memberRole || "").toLowerCase()));
+}
 
 export async function POST(request: Request) {
-  const auth = await requireAdminApi(); if (auth) return auth;
-  const { matchId } = await request.json() as { matchId?: number }; if (!matchId) return Response.json({ error: "Choose a match" }, { status: 400 });
+  const { matchId } = await request.json() as { matchId?: number };
+  if (!matchId) return Response.json({ error: "Choose a match" }, { status: 400 });
+  if (!(await canBroadcast(matchId))) return Response.json({ error: "Live broadcast is available to site admins, tournament creators, official scorers, team captains and team admins." }, { status: 403 });
   const token = crypto.randomUUID().replaceAll("-", "").slice(0, 20); const publishKey = crypto.randomUUID().replaceAll("-", ""); const db = getDb();
   await db.insert(liveSessions).values({ token, publishKey, matchId, active: true }); await db.update(matches).set({ streaming: true }).where(eq(matches.id, matchId));
   return Response.json({ token, publishKey });
