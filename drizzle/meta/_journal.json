@@ -92,6 +92,13 @@
       "when": 1788662492124,
       "tag": "0012_tournament_groups_mvp",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1788670200000,
+      "tag": "0013_repair_tournament_group_sequence",
+      "breakpoints": true
     }
   ]
 }
