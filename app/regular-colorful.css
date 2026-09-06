@@ -1,28 +1,28 @@
 .app-shell[data-theme="light"] {
-  --ink: #142637;
-  --muted: #667887;
-  --line: #d7e5e5;
-  --paper: #f3f8f5;
+  --ink: #173329;
+  --muted: #687d75;
+  --line: #d9e5df;
+  --paper: #f4f8f5;
   --white: #ffffff;
-  --lime: #a8e63e;
-  --lime-dark: #5d8f15;
-  --navy: #10263d;
-  --coral: #ff684e;
-  background: #f3f8f5;
+  --lime: #a8df43;
+  --lime-dark: #5f8f1c;
+  --navy: #16362b;
+  --coral: #ee725d;
+  background: linear-gradient(180deg, #f8fbf8 0%, #f2f7f3 100%);
 }
 
 .app-shell[data-theme="light"] .sidebar {
   background: #ffffff;
-  border-right-color: #cfe1df;
-  box-shadow: 8px 0 28px rgba(20,73,78,.07);
+  border-right-color: #d7e4dd;
+  box-shadow: 8px 0 28px rgba(32, 78, 57, .055);
 }
 
 .app-shell[data-theme="light"] .brand-mark {
   overflow: hidden;
   border-radius: 10px;
-  background: #10263d;
+  background: #17382c;
   color: transparent;
-  box-shadow: 0 7px 18px rgba(16,38,61,.24);
+  box-shadow: 0 7px 18px rgba(23, 56, 44, .19);
 }
 
 .app-shell[data-theme="light"] .brand-mark::before {
@@ -32,79 +32,212 @@
   background: url('/core-cricket-app-icon-192.png') center/cover no-repeat;
 }
 
-.app-shell[data-theme="light"] .sidebar nav button:nth-child(1).nav-active { background: #e0f7ef; color: #087d79; }
-.app-shell[data-theme="light"] .sidebar nav button:nth-child(2).nav-active { background: #e8f0ff; color: #315eb5; }
-.app-shell[data-theme="light"] .sidebar nav button:nth-child(3).nav-active { background: #fff0eb; color: #c64c36; }
-.app-shell[data-theme="light"] .sidebar nav button:nth-child(4).nav-active { background: #f0ebff; color: #6747bd; }
+.app-shell[data-theme="light"] .sidebar nav button.nav-active {
+  background: #eaf5e5;
+  color: #315f23;
+}
+
+.app-shell[data-theme="light"] .sidebar nav button.nav-active span {
+  color: #6c9d20;
+}
 
 .app-shell[data-theme="light"] .topbar {
   background: rgba(255,255,255,.96);
-  border-bottom-color: #d6e5e3;
-  box-shadow: 0 5px 22px rgba(33,80,86,.06);
+  border-bottom-color: #d7e4dd;
+  box-shadow: 0 5px 20px rgba(30, 75, 55, .045);
 }
 
 .app-shell[data-theme="light"] .search {
-  background: #edf7f5;
-  color: #159795;
+  background: #f0f6f2;
+  color: #6f897d;
+  border: 1px solid #e0eae4;
 }
 
 .app-shell[data-theme="light"] .theme-switch {
-  border-color: #c9dfdc;
-  background: #eaf5f3;
+  border-color: #d6e4dc;
+  background: #eef5f0;
 }
 
 .app-shell[data-theme="light"] .theme-switch button.active {
-  color: #0d7776;
-  box-shadow: 0 3px 10px rgba(18,124,124,.13);
+  background: #ffffff;
+  color: #406a27;
+  box-shadow: 0 3px 10px rgba(43, 88, 59, .09);
+}
+
+.app-shell[data-theme="light"] .card,
+.app-shell[data-theme="light"] .season-card,
+.app-shell[data-theme="light"] .score-hero {
+  border-radius: 16px;
 }
 
 .app-shell[data-theme="light"] .card {
-  border-color: #d4e4e2;
-  box-shadow: 0 10px 30px rgba(31,78,82,.065);
+  border-color: #d8e5de;
+  box-shadow: 0 9px 26px rgba(34, 74, 55, .05);
 }
 
 .app-shell[data-theme="light"] .score-hero,
 .app-shell[data-theme="light"] .scoreboard-panel {
-  background: #10263d;
-  box-shadow: inset 0 0 0 1px rgba(72,210,200,.18), 0 15px 32px rgba(16,38,61,.2);
+  background: linear-gradient(135deg, #14372b, #1f4a39);
+  box-shadow: inset 0 0 0 1px rgba(180, 231, 84, .12), 0 14px 30px rgba(20, 55, 43, .16);
 }
 
-.app-shell[data-theme="light"] .quick-actions { border-top: 4px solid #18b7b4; }
-.app-shell[data-theme="light"] .live-snapshots { border-top: 4px solid #ff684e; }
-.app-shell[data-theme="light"] .upcoming { border-top: 4px solid #f2b53c; }
-.app-shell[data-theme="light"] .leaders { border-top: 4px solid #7659d8; }
+.app-shell[data-theme="light"] .quick-actions,
+.app-shell[data-theme="light"] .live-snapshots,
+.app-shell[data-theme="light"] .upcoming,
+.app-shell[data-theme="light"] .leaders {
+  border-top: 3px solid #99c957;
+}
 
-.app-shell[data-theme="light"] .action-grid button:nth-child(1) { background: #f1fbf6; }
-.app-shell[data-theme="light"] .action-grid button:nth-child(2) { background: #f0f6ff; }
-.app-shell[data-theme="light"] .action-grid button:nth-child(3) { background: #fff5f1; }
-.app-shell[data-theme="light"] .action-grid button:nth-child(4) { background: #f7f3ff; }
+.app-shell[data-theme="light"] .action-grid {
+  border-color: #e2ebe6;
+}
+
+.app-shell[data-theme="light"] .action-grid button {
+  background: #ffffff;
+}
+
+.app-shell[data-theme="light"] .action-grid button:hover {
+  background: #f7faf8;
+}
+
+.app-shell[data-theme="light"] .action-icon.lime { background: #edf7d9; color: #608f18; }
+.app-shell[data-theme="light"] .action-icon.blue { background: #e7f3f2; color: #357d79; }
+.app-shell[data-theme="light"] .action-icon.coral { background: #fff0ec; color: #c55e49; }
+.app-shell[data-theme="light"] .action-icon.purple { background: #f0ecf8; color: #6c5b9c; }
 
 .app-shell[data-theme="light"] .season-card {
-  background: #e8f5c9;
-  border: 1px solid #c9df91;
-  border-top: 4px solid #8bc62e;
+  background: linear-gradient(145deg, #edf7dc, #e2f0c7);
+  border: 1px solid #ccdfa5;
+  border-top: 3px solid #8ebf39;
+  color: #263b26;
+  box-shadow: 0 9px 26px rgba(58, 89, 39, .06);
 }
 
 .app-shell[data-theme="light"] .primary-button,
 .app-shell[data-theme="light"] .home-team-action button,
 .app-shell[data-theme="light"] .team-add-player {
-  background: #a8e63e;
-  border-color: #8bc62e;
-  box-shadow: 0 5px 14px rgba(105,154,28,.16);
+  background: #a8df43;
+  border-color: #8dbb35;
+  color: #203319;
+  box-shadow: 0 5px 14px rgba(100, 145, 34, .14);
 }
 
 .app-shell[data-theme="light"] .tabs button.active,
 .app-shell[data-theme="light"] .profile-subtabs button.active,
 .app-shell[data-theme="light"] .mobile-nav button.nav-active {
-  background: #def5ef;
-  border-color: #68c8bd;
-  color: #087c78;
+  background: #eaf5e5;
+  border-color: #b7d49c;
+  color: #3b6929;
+}
+
+.app-shell[data-theme="light"] .admin-pill,
+.app-shell[data-theme="light"] .admin-status {
+  background: #edf7df;
+  border-color: #d2e7b7;
+  color: #416c25;
+}
+
+.app-shell[data-theme="light"] .page.dashboard-page {
+  padding-top: 32px;
+}
+
+.app-shell[data-theme="light"] .dashboard-page .section-head {
+  margin-bottom: 22px;
+}
+
+.app-shell[data-theme="light"] .dashboard-grid {
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr);
+  grid-auto-flow: row;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.app-shell[data-theme="light"] .dashboard-grid > * {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.app-shell[data-theme="light"] .score-hero,
+.app-shell[data-theme="light"] .quick-actions {
+  min-height: 255px;
+  height: 100%;
+}
+
+.app-shell[data-theme="light"] .live-snapshots,
+.app-shell[data-theme="light"] .upcoming {
+  min-height: 230px;
+  height: 100%;
+}
+
+.app-shell[data-theme="light"] .leaders,
+.app-shell[data-theme="light"] .season-card {
+  min-height: 330px;
+  height: 100%;
+}
+
+.app-shell[data-theme="light"] .quick-actions,
+.app-shell[data-theme="light"] .live-snapshots,
+.app-shell[data-theme="light"] .upcoming,
+.app-shell[data-theme="light"] .leaders {
+  padding: 23px 24px;
+}
+
+.app-shell[data-theme="light"] .card-title {
+  min-height: 43px;
+  margin-bottom: 16px;
+  align-items: flex-start;
+}
+
+.app-shell[data-theme="light"] .card-title > div {
+  min-width: 0;
+}
+
+.app-shell[data-theme="light"] .card-title h2 {
+  line-height: 1.15;
+}
+
+.app-shell[data-theme="light"] .live-snapshot,
+.app-shell[data-theme="light"] .match-row,
+.app-shell[data-theme="light"] .leader-row {
+  width: 100%;
+}
+
+.app-shell[data-theme="light"] .live-snapshots,
+.app-shell[data-theme="light"] .upcoming,
+.app-shell[data-theme="light"] .leaders {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell[data-theme="light"] .live-snapshots > .empty,
+.app-shell[data-theme="light"] .upcoming > .empty,
+.app-shell[data-theme="light"] .leaders > .empty {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.app-shell[data-theme="light"] .leader-group {
+  width: 100%;
+}
+
+.app-shell[data-theme="light"] .leader-row {
+  grid-template-columns: 28px 40px minmax(0,1fr) auto;
+}
+
+.app-shell[data-theme="light"] .home-team-action {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 20px;
+  border-color: #d7e5dd;
+  background: linear-gradient(135deg, #ffffff, #f3f8f4);
+  box-shadow: 0 9px 26px rgba(34, 74, 55, .045);
 }
 
 .app-shell[data-theme="light"] .install-app-icon {
   overflow: hidden;
   padding: 0;
-  background: #10263d;
+  background: #17382c;
 }
 
 .app-shell[data-theme="light"] .install-app-icon img {
@@ -114,10 +247,50 @@
   object-fit: cover;
 }
 
+@media (max-width: 1100px) {
+  .app-shell[data-theme="light"] .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .app-shell[data-theme="light"] .score-hero,
+  .app-shell[data-theme="light"] .quick-actions,
+  .app-shell[data-theme="light"] .live-snapshots,
+  .app-shell[data-theme="light"] .upcoming,
+  .app-shell[data-theme="light"] .leaders,
+  .app-shell[data-theme="light"] .season-card {
+    min-height: 0;
+    height: auto;
+  }
+}
+
 @media (max-width: 760px) {
   .app-shell[data-theme="light"] .mobile-nav {
     background: rgba(255,255,255,.98);
-    border-top-color: #cfe0de;
-    box-shadow: 0 -8px 24px rgba(22,75,79,.1);
+    border-top-color: #d5e3dc;
+    box-shadow: 0 -8px 24px rgba(31, 73, 53, .08);
+  }
+
+  .app-shell[data-theme="light"] .page.dashboard-page {
+    padding-top: 22px;
+  }
+
+  .app-shell[data-theme="light"] .dashboard-grid {
+    gap: 14px;
+  }
+
+  .app-shell[data-theme="light"] .quick-actions,
+  .app-shell[data-theme="light"] .live-snapshots,
+  .app-shell[data-theme="light"] .upcoming,
+  .app-shell[data-theme="light"] .leaders {
+    padding: 18px 16px;
+  }
+
+  .app-shell[data-theme="light"] .card-title {
+    min-height: 0;
+    margin-bottom: 13px;
+  }
+
+  .app-shell[data-theme="light"] .home-team-action {
+    margin-top: 14px;
   }
 }
