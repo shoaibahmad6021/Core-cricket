@@ -1,6 +1,6 @@
 import { getDb } from "@/db";
 import { del } from "@vercel/blob";
-import { matchPlayers, matches, players, teams, tournamentScorers, tournamentTeams, tournaments } from "@/db/schema";
+import { matchMvpOverrides, matchPlayers, matches, players, teams, tournamentGroupTeams, tournamentGroups, tournamentMvpOverrides, tournamentScorers, tournamentTeams, tournaments } from "@/db/schema";
 import { and, eq, or, sql } from "drizzle-orm";
 import { isCoreCricketAdmin } from "@/app/admin-auth";
 import { getChatGPTUser, type ChatGPTUser } from "@/app/chatgpt-auth";
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const teamManager = teamIdForAction ? await canManageTeam(user, teamIdForAction) : false;
     const tournamentIdForAction = Number(body.tournamentId) || 0;
     const tournamentManager = tournamentIdForAction ? await canManageTournament(user, tournamentIdForAction) : false;
-    if (!isCoreCricketAdmin(user) && !(["player", "teamPlayer"].includes(type) && teamManager) && !(type === "tournamentScorer" && tournamentManager)) return Response.json({ error: "Captain, tournament creator or administrator access is required" }, { status: 403 });
+    if (!isCoreCricketAdmin(user) && !(["player", "teamPlayer"].includes(type) && teamManager) && !(["tournamentScorer", "tournamentGroup", "tournamentGroupTeam", "matchMvp", "tournamentMvp", "tournamentTeam", "match"].includes(type) && tournamentManager)) return Response.json({ error: "Captain, tournament creator or administrator access is required" }, { status: 403 });
 
     if (type === "team") {
       const name = String(body.name ?? "").trim();
@@ -100,6 +100,7 @@ export async function POST(request: Request) {
         createdByEmail: user.email.trim().toLowerCase(),
         createdByName: (user.fullName || user.displayName).trim(),
       }).returning();
+      await db.insert(tournamentGroups).values({ tournamentId: created.id, name: "Main Group", sortOrder: 0 });
       return Response.json({ item: created }, { status: 201 });
     }
 
@@ -110,8 +111,46 @@ export async function POST(request: Request) {
       const [existing] = await db.select().from(tournamentTeams).where(and(eq(tournamentTeams.tournamentId, tournamentId), eq(tournamentTeams.teamId, teamId))).limit(1);
       if (existing) return Response.json({ error: "This team is already in the tournament" }, { status: 409 });
       const [created] = await db.insert(tournamentTeams).values({ tournamentId, teamId }).returning();
+      let groupId = Number(body.groupId) || 0;
+      if (!groupId) {
+        const [main] = await db.select().from(tournamentGroups).where(eq(tournamentGroups.tournamentId, tournamentId)).limit(1);
+        groupId = main?.id ?? 0;
+      }
+      if (groupId) await db.insert(tournamentGroupTeams).values({ tournamentId, groupId, teamId });
       await db.update(tournaments).set({ teamsCount: sql`${tournaments.teamsCount} + 1` }).where(eq(tournaments.id, tournamentId));
       return Response.json({ item: created }, { status: 201 });
+    }
+
+    if (type === "tournamentGroup") {
+      const tournamentId = Number(body.tournamentId); const name = String(body.name ?? "").trim();
+      if (!tournamentId || !name) return Response.json({ error: "Tournament and group name are required" }, { status: 400 });
+      const existing = await db.select().from(tournamentGroups).where(eq(tournamentGroups.tournamentId, tournamentId));
+      const [created] = await db.insert(tournamentGroups).values({ tournamentId, name, sortOrder: existing.length }).returning();
+      return Response.json({ item: created }, { status: 201 });
+    }
+
+    if (type === "tournamentGroupTeam") {
+      const tournamentId = Number(body.tournamentId); const groupId = Number(body.groupId); const teamId = Number(body.teamId);
+      if (!tournamentId || !groupId || !teamId) return Response.json({ error: "Tournament, group and team are required" }, { status: 400 });
+      await db.delete(tournamentGroupTeams).where(and(eq(tournamentGroupTeams.tournamentId, tournamentId), eq(tournamentGroupTeams.teamId, teamId)));
+      const [created] = await db.insert(tournamentGroupTeams).values({ tournamentId, groupId, teamId }).returning();
+      return Response.json({ item: created });
+    }
+
+    if (type === "matchMvp") {
+      const tournamentId = Number(body.tournamentId); const matchId = Number(body.matchId); const playerId = Number(body.playerId);
+      if (!tournamentId || !matchId || !playerId) return Response.json({ error: "Match and player are required" }, { status: 400 });
+      await db.delete(matchMvpOverrides).where(eq(matchMvpOverrides.matchId, matchId));
+      const [created] = await db.insert(matchMvpOverrides).values({ matchId, playerId }).returning();
+      return Response.json({ item: created });
+    }
+
+    if (type === "tournamentMvp") {
+      const tournamentId = Number(body.tournamentId); const playerId = Number(body.playerId);
+      if (!tournamentId || !playerId) return Response.json({ error: "Tournament and player are required" }, { status: 400 });
+      await db.delete(tournamentMvpOverrides).where(eq(tournamentMvpOverrides.tournamentId, tournamentId));
+      const [created] = await db.insert(tournamentMvpOverrides).values({ tournamentId, playerId }).returning();
+      return Response.json({ item: created });
     }
 
     if (type === "tournamentScorer") {
