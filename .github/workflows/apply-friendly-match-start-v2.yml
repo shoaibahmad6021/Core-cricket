@@ -1,0 +1,48 @@
+name: Apply Friendly Match Start V2
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message == 'Apply friendly match start v2'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable standalone friendly matches
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('components/core-cricket-app.tsx')
+          s = p.read_text()
+
+          old = '  const canScoreActiveMatch = canScoreTournament(activeMatch?.tournamentId ?? null) || (!userPreview && handoffMatchId === activeMatch?.id);'
+          new = '  const canScoreActiveMatch = canScoreTournament(activeMatch?.tournamentId ?? null) || (!userPreview && Boolean(activeMatch && !activeMatch.tournamentId && (user.isAdmin || data.players.some((player) => [activeMatch.teamAId, activeMatch.teamBId].includes(player.teamId ?? 0) && player.name.trim().toLowerCase() === user.displayName.trim().toLowerCase() && ["captain", "team admin"].includes((player.memberRole ?? "").toLowerCase()))))) || (!userPreview && handoffMatchId === activeMatch?.id);'
+          if old not in s:
+              raise SystemExit('canScoreActiveMatch marker not found')
+          s = s.replace(old, new, 1)
+
+          old = 'onStartMatch={() => { if (!activeMatch?.tournamentId) { setNotice("Assign this match to a tournament so an official scorer can be selected before it starts."); return; } setPendingStartMatchId(activeMatch.id); setSelectedTournamentId(activeMatch.tournamentId); setTournamentHubOpen(true); go("manage"); }}'
+          new = 'onStartMatch={() => { if (!activeMatch) return; if (!activeMatch.tournamentId) { setModal("innings"); setNotice("Friendly match selected — choose the opening batters and bowler to start."); return; } setPendingStartMatchId(activeMatch.id); setSelectedTournamentId(activeMatch.tournamentId); setTournamentHubOpen(true); go("manage"); }}'
+          if old not in s:
+              raise SystemExit('onStartMatch marker not found')
+          s = s.replace(old, new, 1)
+
+          old = '  if (match.status === "Upcoming") return <div className="page"><SectionHead eyebrow={tournament?.name ?? "TOURNAMENT MATCH"} title={`${battingTeam?.shortName} vs ${bowlingTeam?.shortName}`} /><section className="no-live-page"><span>＋</span><h2>Match has not started</h2><p>{canStartMatch ? "Choose Start Match to confirm an official scorer, Playing XI and toss before live scoring begins." : "The live scorecard will appear after an authorized organizer or team admin starts the match."}</p>{canStartMatch && <button className="primary-button" onClick={onStartMatch}>Start Match</button>}</section></div>;'
+          new = '  if (match.status === "Upcoming") { const friendly = !match.tournamentId; return <div className="page"><SectionHead eyebrow={friendly ? "FRIENDLY MATCH" : (tournament?.name ?? "TOURNAMENT MATCH")} title={`${battingTeam?.shortName} vs ${bowlingTeam?.shortName}`} /><section className="no-live-page"><span>＋</span><h2>Match has not started</h2><p>{canStartMatch ? (friendly ? "This match is set as Friendly. Start it directly by choosing the opening batters and bowler." : "Choose Start Match to confirm an official scorer, Playing XI and toss before live scoring begins.") : "The live scorecard will appear after an authorized organizer or team admin starts the match."}</p>{canStartMatch && <button className="primary-button" onClick={onStartMatch}>{friendly ? "Start Friendly Match" : "Start Match"}</button>}</section></div>; }'
+          if old not in s:
+              raise SystemExit('Upcoming match block marker not found')
+          s = s.replace(old, new, 1)
+
+          p.write_text(s)
+          PY
+
+          git config user.name "Core Cricket Update"
+          git config user.email "actions@github.com"
+          git add components/core-cricket-app.tsx
+          git commit -m "Enable standalone friendly match scoring"
+          git push
