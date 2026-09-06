@@ -1,0 +1,29 @@
+.fall-ball{--start-x:-120px}.fall-c{--start-x:-180px}.fall-o{--start-x:-65px}.fall-r{--start-x:55px}.fall-e{--start-x:170px}.fall-cricket{--start-x:105px}.fall-shield{--start-x:-105px}@keyframes part-fall-three-bounces{0%{opacity:0;transform:translate(var(--start-x),-82vh) rotate(-32deg) scale(.6)}8%{opacity:1}28%{opacity:1;transform:translate(var(--start-x),16vh) rotate(12deg) scale(1)}38%{transform:translate(var(--start-x),-13vh) rotate(-7deg) scale(1)}46%{transform:translate(var(--start-x),16vh) rotate(5deg) scale(1)}54%{transform:translate(var(--start-x),-8vh) rotate(-4deg) scale(.98)}62%{transform:translate(var(--start-x),16vh) rotate(3deg) scale(.97)}69%{transform:translate(var(--start-x),-3vh) rotate(-2deg) scale(.95)}76%{transform:translate(var(--start-x),16vh) rotate(0) scale(.92)}94%{opacity:1;transform:translate(var(--end-x),var(--end-y)) rotate(0) scale(1)}100%{opacity:0;transform:translate(var(--end-x),var(--end-y)) rotate(0) scale(.9)}}
+
+/* Ten-second launch: falling pieces finish their bounces by six seconds. */
+.cinematic-launch{animation-delay:9.35s!important}
+.logo-parts>*{animation-duration:5.4s!important}
+.cinematic-logo{animation-name:assembled-logo-pitch-impact-10!important;animation-duration:10s!important}
+.cinematic-launch .crater{animation-delay:5.35s!important}
+.cinematic-launch .impact-zone>i{animation-delay:calc(5.38s + (var(--piece)*.015s))!important}
+.cinematic-launch .impact-flash{animation-delay:5.32s!important}
+.cinematic-launch:after{animation-delay:5.42s!important}
+.cinematic-launch>strong{animation-delay:6.15s!important}
+.cinematic-launch>small{animation-delay:6.4s!important}
+.creator-credit{animation-delay:6.75s!important}
+@keyframes assembled-logo-pitch-impact-10{0%,49%{opacity:0;transform:translateY(-48vh) scale(.82) skew(-4deg);filter:brightness(1)}50%{opacity:1;transform:translateY(-30vh) scale(1.08) skew(-4deg);filter:brightness(1.3) drop-shadow(0 0 20px #fff)}58%{opacity:1;transform:translateY(14.2vh) scale(1.34) skew(-4deg);filter:brightness(1.45) drop-shadow(0 0 28px #fff)}60%{transform:translateY(15vh) scale(1.42,.98) skew(-4deg);filter:brightness(2.2) saturate(1.5) drop-shadow(0 0 46px #fff) drop-shadow(0 0 80px #ffdf62)}63%{transform:translateY(15vh) scale(1.34) skew(-4deg);filter:brightness(1.7) saturate(1.45) drop-shadow(0 0 34px #fff)}70%{transform:translateY(15vh) scale(1.34) skew(-4deg);filter:brightness(2.6) saturate(1.6) drop-shadow(0 0 44px #fff) drop-shadow(0 0 90px #ffdf62)}92%{transform:translateY(15vh) scale(1.38) skew(-4deg);filter:brightness(4.3) saturate(1.9) drop-shadow(0 0 70px #fff) drop-shadow(0 0 140px #ffe56f)}100%{opacity:1;transform:translateY(15vh) scale(1.34) skew(-4deg);filter:brightness(3.2) saturate(1.7) drop-shadow(0 0 56px #fff) drop-shadow(0 0 110px #b7f34b)}}
+
+/* The completed crest hits and remains planted in the cricket pitch. */
+.cinematic-launch .impact-zone{top:66%;width:min(76vw,560px);height:190px;perspective:500px}
+.cinematic-launch .pitch-strip{position:absolute;z-index:-2;left:50%;top:52%;width:min(68vw,470px);height:125px;transform:translate(-50%,-50%) rotateX(63deg);border:2px solid rgba(245,238,199,.5);background:linear-gradient(90deg,rgba(201,169,104,.08),rgba(205,177,114,.72) 16%,rgba(220,194,132,.78) 50%,rgba(205,177,114,.72) 84%,rgba(201,169,104,.08)),repeating-linear-gradient(90deg,transparent 0 42px,rgba(73,49,22,.13) 43px 45px);box-shadow:0 18px 34px rgba(0,0,0,.42);opacity:.82}
+.cinematic-launch .pitch-strip:before,.cinematic-launch .pitch-strip:after{content:"";position:absolute;left:8%;right:8%;height:3px;background:rgba(255,255,238,.82);box-shadow:0 8px rgba(255,255,238,.45)}
+.cinematic-launch .pitch-strip:before{top:16px}.cinematic-launch .pitch-strip:after{bottom:24px}
+.pitch-cracks{position:absolute;z-index:1;left:50%;top:52%;width:1px;height:1px}
+.pitch-cracks>i{--angle:calc(var(--crack)*45deg);position:absolute;left:0;top:0;width:clamp(65px,11vw,115px);height:3px;opacity:0;transform-origin:left center;background:linear-gradient(90deg,#120b05 0 56%,transparent 57%);clip-path:polygon(0 20%,28% 0,43% 65%,66% 25%,100% 75%,100% 100%,65% 55%,42% 100%,25% 43%,0 80%);animation:pitch-crack-open .72s calc(5.34s + var(--crack)*.025s) ease-out forwards}
+.smoke-plumes{position:absolute;z-index:4;left:50%;top:48%;width:1px;height:1px}
+.smoke-plumes>i{--drift:calc((var(--smoke) - 3)*28px);position:absolute;left:-28px;top:-15px;width:56px;height:56px;border-radius:50%;opacity:0;background:radial-gradient(circle,rgba(224,217,196,.78),rgba(123,111,91,.47) 45%,transparent 72%);filter:blur(7px);animation:smoke-rise 2.5s calc(5.36s + var(--smoke)*.09s) ease-out forwards}
+@keyframes pitch-crack-open{0%{opacity:0;transform:rotate(var(--angle)) scaleX(.04)}35%{opacity:1}100%{opacity:.92;transform:rotate(var(--angle)) scaleX(1)}}
+@keyframes smoke-rise{0%{opacity:0;transform:translate(0,8px) scale(.25)}18%{opacity:.85}65%{opacity:.48}100%{opacity:0;transform:translate(var(--drift),-175px) scale(2.5)}}
+.cinematic-launch .impact-zone>i{background:linear-gradient(145deg,#b79055,#4c321d 65%,#181008);box-shadow:0 3px 6px rgba(0,0,0,.42)}
+@media(max-width:760px){.cinematic-launch .impact-zone{top:68%;width:92vw;height:160px}.cinematic-launch .pitch-strip{width:86vw;height:108px}.pitch-cracks>i{width:74px}}
+@media(prefers-reduced-motion:reduce){.logo-parts{display:none!important}.cinematic-logo{opacity:1;animation:launch-logo .7s ease both!important;filter:none}.cinematic-launch{animation-delay:1.4s!important}}
