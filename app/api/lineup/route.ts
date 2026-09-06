@@ -9,16 +9,20 @@ export async function POST(request: Request) {
     const body = await request.json() as { matchId?: number; teamId?: number; playerIds?: number[] };
     const matchId = Number(body.matchId); const teamId = Number(body.teamId);
     const playerIds = [...new Set((body.playerIds ?? []).map(Number).filter(Boolean))];
-    if (!matchId || !teamId || playerIds.length !== 11) return Response.json({ error: "Select exactly 11 players" }, { status: 400 });
+    if (!matchId || !teamId) return Response.json({ error: "Match and team are required" }, { status: 400 });
     const user = await getChatGPTUser(); if (!user) return Response.json({ error: "Sign in is required" }, { status: 401 });
     const db = getDb();
     const [match] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
     if (!match || ![match.teamAId, match.teamBId].includes(teamId)) return Response.json({ error: "Team is not part of this match" }, { status: 404 });
     if (match.status !== "Upcoming") return Response.json({ error: "Playing XI cannot be changed after scoring starts" }, { status: 409 });
     const [tournament] = match.tournamentId ? await db.select().from(tournaments).where(eq(tournaments.id, match.tournamentId)).limit(1) : [];
-    if (!(await canSelectTeam(user, teamId, tournament))) return Response.json({ error: "Only the team captain, team admin or tournament creator can select this XI" }, { status: 403 });
+    if (!(await canSelectTeam(user, teamId, tournament))) return Response.json({ error: "Only the team captain, team admin or tournament creator can select this lineup" }, { status: 403 });
+    const fullSquad = await db.select({ id: players.id }).from(players).where(eq(players.teamId, teamId));
+    const required = match.tournamentId ? 11 : Math.min(11, fullSquad.length);
+    if (required < 1) return Response.json({ error: "Add at least one player to this team before starting the match" }, { status: 400 });
+    if (playerIds.length !== required) return Response.json({ error: match.tournamentId ? "Select exactly 11 players" : `Select all ${required} available player${required === 1 ? "" : "s"}` }, { status: 400 });
     const squad = await db.select({ id: players.id }).from(players).where(and(eq(players.teamId, teamId), inArray(players.id, playerIds)));
-    if (squad.length !== 11) return Response.json({ error: "Every selected player must belong to this team's squad" }, { status: 400 });
+    if (squad.length !== required) return Response.json({ error: "Every selected player must belong to this team's squad" }, { status: 400 });
     await db.batch([
       db.delete(matchPlayers).where(and(eq(matchPlayers.matchId, matchId), eq(matchPlayers.teamId, teamId))),
       db.insert(matchPlayers).values(playerIds.map((playerId) => ({ matchId, teamId, playerId }))),
