@@ -1,0 +1,36 @@
+name: Apply Direct Extras Scoring
+
+on:
+  push:
+    paths:
+      - '.github/trigger-direct-extras.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace extras menu with direct buttons
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p=Path('components/core-cricket-app.tsx')
+          s=p.read_text()
+          s=s.replace('  const [scoreTab, setScoreTab] = useState<"runs" | "extras">("runs");\n  const [extraType, setExtraType] = useState("Wide");', '  const [extraType, setExtraType] = useState<string | null>(null);')
+          old='''    {readOnly ? <section className="scoring-pad card readonly-panel"><span>VIEW-ONLY SCORECARD</span><h2>Live scoring controls are locked</h2><p>You can follow every delivery, current batter, bowler and match figures. Only an authorized scorer can update the score.</p></section> : <section className="scoring-pad card"><div className="pad-title"><div><span>RECORD DELIVERY</span><h2>{scoreTab === "runs" ? "Runs off the bat" : "Extras"}</h2></div><button onClick={onUndo}>↶ Undo</button></div>{scoreTab === "runs" && <><div className="run-grid">{[0, 1, 2, 3, 4, 6].map((run) => <button key={run} className={run >= 4 ? "boundary-button" : ""} onClick={() => onScore({ runsBatter: run })}>{run}<span>{run === 0 ? "DOT" : run === 4 ? "FOUR" : run === 6 ? "SIX" : "RUNS"}</span></button>)}</div><button className="wicket-button" onClick={onWicket}>W <span>WICKET</span></button></>}<button className={scoreTab === "extras" ? "extras-tab active" : "extras-tab"} onClick={() => setScoreTab((tab) => tab === "extras" ? "runs" : "extras")}>{scoreTab === "extras" ? "← Return to runs" : "+ Extras"}</button>{scoreTab === "extras" && <div className="extras-panel"><Field label="Extra type"><select value={extraType} onChange={(event) => setExtraType(event.target.value)}><option>Wide</option><option>No ball</option><option>Bye</option><option>Leg bye</option><option>Penalty</option></select></Field><div className="field-row"><Field label="Runs off bat"><select value={batRuns} onChange={(event) => setBatRuns(Number(event.target.value))}>{[0,1,2,3,4,5,6].map((run) => <option key={run}>{run}</option>)}</select></Field><Field label="Total extra runs"><select value={extraRuns} onChange={(event) => setExtraRuns(Number(event.target.value))}>{[0,1,2,3,4,5,6,7].map((run) => <option key={run}>{run}</option>)}</select></Field></div><p className="form-help">For a wide plus running, include the automatic one run in the total extra runs.</p><button className="primary-button full" onClick={() => onScore({ extraType, extraRuns, runsBatter: batRuns })}>Add extras</button></div>}</section>}'''
+          new='''    {readOnly ? <section className="scoring-pad card readonly-panel"><span>VIEW-ONLY SCORECARD</span><h2>Live scoring controls are locked</h2><p>You can follow every delivery, current batter, bowler and match figures. Only an authorized scorer can update the score.</p></section> : <section className="scoring-pad card"><div className="pad-title"><div><span>RECORD DELIVERY</span><h2>Runs off the bat</h2></div><button onClick={onUndo}>↶ Undo</button></div><div className="run-grid">{[0, 1, 2, 3, 4, 6].map((run) => <button key={run} className={run >= 4 ? "boundary-button" : ""} onClick={() => onScore({ runsBatter: run })}>{run}<span>{run === 0 ? "DOT" : run === 4 ? "FOUR" : run === 6 ? "SIX" : "RUNS"}</span></button>)}</div><button className="wicket-button" onClick={onWicket}>W <span>WICKET</span></button><div style={{marginTop:16}}><span style={{display:"block",fontSize:11,fontWeight:900,letterSpacing:".12em",marginBottom:8}}>EXTRAS</span><div style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:8}}>{["Wide","No ball","Bye","Leg bye","Penalty"].map((type)=><button key={type} className={extraType===type?"secondary-button active":"secondary-button"} onClick={()=>{setExtraType(type);setBatRuns(0);setExtraRuns(type==="Penalty"?5:1);}}>{type}</button>)}</div></div>{extraType && <div className="extras-panel" style={{marginTop:12}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12}}><b>{extraType}</b><button type="button" onClick={()=>setExtraType(null)} aria-label="Close extra">×</button></div><div className="field-row">{extraType === "No ball" && <Field label="Runs off bat"><select value={batRuns} onChange={(event) => setBatRuns(Number(event.target.value))}>{[0,1,2,3,4,5,6].map((run) => <option key={run}>{run}</option>)}</select></Field>}<Field label={extraType === "Wide" ? "Wide runs" : extraType === "No ball" ? "No-ball extra runs" : `${extraType} runs`}><select value={extraRuns} onChange={(event) => setExtraRuns(Number(event.target.value))}>{(extraType === "Penalty" ? [5,10] : [1,2,3,4,5,6,7]).map((run) => <option key={run}>{run}</option>)}</select></Field></div>{extraType === "Wide" && <p className="form-help">Include the automatic wide run in this total.</p>}{extraType === "No ball" && <p className="form-help">No-ball extras are added separately from any runs scored off the bat.</p>}<button className="primary-button full" onClick={() => { onScore({ extraType, extraRuns, runsBatter: extraType === "No ball" ? batRuns : 0 }); setExtraType(null); }}>Add {extraType}</button></div>}</section>}'''
+          if old not in s:
+              raise SystemExit('Scoring extras block not found')
+          s=s.replace(old,new)
+          p.write_text(s)
+          PY
+      - name: Commit change
+        run: |
+          git config user.name "Core Cricket Update"
+          git config user.email "actions@github.com"
+          git add components/core-cricket-app.tsx
+          git commit -m "Show extras as direct scoring buttons" || exit 0
+          git push
