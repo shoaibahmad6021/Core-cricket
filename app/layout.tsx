@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { LiveWatchQrEnhancer } from "@/components/live-watch-qr-enhancer";
 import { LiveRtcBridge } from "@/components/live-rtc-bridge";
+import { StableLiveWatchLink } from "@/components/stable-live-watch-link";
 import "./globals.css";
 import "./storage-live.css";
 import "./lineup.css";
@@ -60,7 +61,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased"><LiveWatchQrEnhancer /><LiveRtcBridge />{children}</body>
+      <body className="antialiased"><StableLiveWatchLink /><LiveWatchQrEnhancer /><LiveRtcBridge />{children}</body>
     </html>
   );
 }
