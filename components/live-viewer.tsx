@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type LivePlayer = { id: number; name: string };
 type LiveDelivery = { id: number; sequence: number; strikerBefore?: number | null; bowlerId?: number | null; runsBatter: number; extraType: string | null; extraRuns: number; legalBall: boolean; wicketType: string | null };
+type LiveSponsor = { id: number; name: string; logoUrl?: string | null };
 type LiveData = {
   token?: string;
   active: boolean;
   match: { id: number; runs: number; wickets: number; balls: number; teamAId: number; teamBId: number; battingTeamId: number; strikerId: number | null; nonStrikerId: number | null; bowlerId: number | null; venue: string };
   tournament?: { name: string };
+  sponsors?: LiveSponsor[];
   teams: { id: number; name: string; shortName: string; logoUrl?: string | null }[];
   players: LivePlayer[];
   deliveries: LiveDelivery[];
@@ -25,6 +27,8 @@ export function LiveViewer() {
   const [frameUrl, setFrameUrl] = useState("");
   const [hasFrame, setHasFrame] = useState(false);
   const [resolvedToken, setResolvedToken] = useState("");
+  const [sponsorIndex, setSponsorIndex] = useState(0);
+  const [sponsorVisible, setSponsorVisible] = useState(false);
   const token = typeof window === "undefined" ? "" : new URLSearchParams(location.search).get("token") ?? "";
   const matchId = typeof window === "undefined" ? "" : new URLSearchParams(location.search).get("matchId") ?? "";
 
@@ -41,6 +45,22 @@ export function LiveViewer() {
     refresh(); const frameTimer = setInterval(refresh, 700); return () => clearInterval(frameTimer);
   }, [token, resolvedToken]);
 
+  const sponsors = useMemo(() => (data?.sponsors ?? []).filter((sponsor) => sponsor.name || sponsor.logoUrl), [data?.sponsors]);
+  useEffect(() => {
+    if (!sponsors.length) { setSponsorVisible(false); return; }
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
+    const showSponsor = () => {
+      setSponsorVisible(true);
+      hideTimer = setTimeout(() => {
+        setSponsorVisible(false);
+        setSponsorIndex((current) => (current + 1) % sponsors.length);
+      }, 7000);
+    };
+    const first = setTimeout(showSponsor, 4500);
+    const cycle = setInterval(showSponsor, 28000);
+    return () => { clearTimeout(first); if (hideTimer) clearTimeout(hideTimer); clearInterval(cycle); };
+  }, [sponsors.length]);
+
   if (!data) return <main className="viewer-page"><p>Connecting to Core Cricket Live…</p></main>;
   if (data.error) return <main className="viewer-page"><h1>Live broadcast unavailable</h1><p>{data.error}</p><a href="/">Return to live scores</a></main>;
 
@@ -52,6 +72,7 @@ export function LiveViewer() {
   const strikerStats = batterFigures(data.deliveries, data.match.strikerId);
   const nonStrikerStats = batterFigures(data.deliveries, data.match.nonStrikerId);
   const bowlerStats = bowlerFigures(data.deliveries, data.match.bowlerId);
+  const activeSponsor = sponsors.length ? sponsors[sponsorIndex % sponsors.length] : undefined;
   let legalSeen = 0; let overStart = data.deliveries.length;
   for (let index = data.deliveries.length - 1; index >= 0; index -= 1) { if (data.deliveries[index].legalBall) legalSeen += 1; overStart = index; if (legalSeen >= 6) break; }
   const recent = data.deliveries.slice(overStart);
@@ -61,6 +82,15 @@ export function LiveViewer() {
     <section className="viewer-video">
       {frameUrl && <img className="live-camera-frame" src={frameUrl} alt="Live cricket camera" onLoad={() => setHasFrame(true)} />}
       {!hasFrame && <div className="camera-waiting"><div className="camera-icon">▣</div><h2>Connecting to live camera…</h2><p>Keep this page open. Video begins when the broadcaster&apos;s first camera frame arrives.</p></div>}
+
+      {activeSponsor && <div className={`live-sponsor-overlay${sponsorVisible ? " sponsor-visible" : ""}`} aria-live="polite">
+        <div className="sponsor-live-kicker">CORE CRICKET PARTNER</div>
+        <div className="sponsor-live-card">
+          {activeSponsor.logoUrl ? <div className="sponsor-live-logo"><img src={activeSponsor.logoUrl} alt={`${activeSponsor.name} logo`} /></div> : <div className="sponsor-live-logo sponsor-live-fallback">◇</div>}
+          <div className="sponsor-live-copy"><span>OFFICIAL SPONSOR</span><strong>{activeSponsor.name}</strong><p>Proudly supporting {data.tournament?.name ?? "today&apos;s match"} on Core Cricket Live.</p></div>
+        </div>
+      </div>}
+
       <div className="viewer-score" style={{gridTemplateColumns:"auto minmax(0,1fr) auto",gap:10,padding:12,alignItems:"center"}}>
         <div style={{display:"grid",gap:2,minWidth:76}}><span style={{fontSize:8,fontWeight:900,letterSpacing:".08em"}}>{batting?.shortName ?? "BAT"}</span><strong style={{fontSize:24,lineHeight:1}}>{data.match.runs}/{data.match.wickets}</strong><b style={{fontSize:9,color:"#b7f34b"}}>{overs(data.match.balls)} OV</b></div>
         <div style={{display:"grid",gap:4,minWidth:0}}>
@@ -71,6 +101,6 @@ export function LiveViewer() {
         <div style={{display:"grid",gap:5,justifyItems:"end"}}><span style={{fontSize:7,color:"#91a79a",fontWeight:900}}>THIS OVER</span><div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"flex-end",maxWidth:150}}>{recent.length ? recent.map((d) => <i key={d.id} style={{width:23,height:23,borderRadius:"50%",display:"grid",placeItems:"center",background:d.wicketType?"#8c2e2e":d.runsBatter>=4?"#476b1c":"#26382c",fontSize:8,fontStyle:"normal",fontWeight:900}}>{ballLabel(d)}</i>) : <small>—</small>}</div><em style={{fontSize:7,color:"#aac0af",fontStyle:"normal",maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{data.tournament?.name ?? `vs ${other?.shortName ?? ""}`}</em></div>
       </div>
     </section>
-    <footer>{data.match.venue} · Camera and score refresh automatically</footer>
+    <footer>{data.match.venue} · Camera, score and sponsor graphics refresh automatically</footer>
   </main>;
 }
