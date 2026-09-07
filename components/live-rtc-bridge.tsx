@@ -65,13 +65,15 @@ async function viewerBridge(token: string) {
   await waitForIce(pc);
   const offerSdp = pc.localDescription?.sdp;
   if (!offerSdp) throw new Error("Unable to create live viewer connection");
-  await fetch("/api/live/rtc", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "offer", token, viewerId, sdp: offerSdp }) });
+  const offerResponse = await fetch("/api/live/rtc", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "offer", token, viewerId, sdp: offerSdp }) });
+  if (!offerResponse.ok) throw new Error("Live session ended");
 
   let stopped = false;
   const poll = async () => {
     if (stopped || pc.remoteDescription) return;
     try {
       const response = await fetch(`/api/live/rtc?token=${encodeURIComponent(token)}&viewerId=${encodeURIComponent(viewerId)}`, { cache: "no-store" });
+      if (!response.ok) return;
       const body = await response.json() as { answerSdp?: string | null };
       if (body.answerSdp && !pc.remoteDescription) await pc.setRemoteDescription({ type: "answer", sdp: body.answerSdp });
     } catch { /* keep JPEG fallback alive */ }
@@ -85,6 +87,8 @@ async function viewerBridge(token: string) {
     pc.close();
     remoteVideo?.remove();
     audioPrompt?.remove();
+    const waiting = document.querySelector<HTMLElement>(".camera-waiting");
+    if (waiting) waiting.style.display = "";
     void fetch("/api/live/rtc", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "close", token, viewerId }), keepalive: true });
   };
 }
@@ -92,18 +96,57 @@ async function viewerBridge(token: string) {
 function publisherBridge() {
   const peers = new Map<string, RTCPeerConnection>();
   let stopped = false;
+  let activeToken = "";
+
+  const closePeers = () => {
+    peers.forEach((pc) => pc.close());
+    peers.clear();
+  };
+
+  const resolveToken = async (watchUrl: string) => {
+    try {
+      const parsed = new URL(watchUrl);
+      const direct = parsed.searchParams.get("token");
+      if (direct) {
+        const response = await fetch(`/api/live?token=${encodeURIComponent(direct)}`, { cache: "no-store" });
+        if (!response.ok) return "";
+        const body = await response.json() as { active?: boolean; token?: string };
+        return body.active ? (body.token ?? direct) : "";
+      }
+      const matchId = parsed.searchParams.get("matchId");
+      if (!matchId) return "";
+      const response = await fetch(`/api/live?matchId=${encodeURIComponent(matchId)}`, { cache: "no-store" });
+      if (!response.ok) return "";
+      const body = await response.json() as { active?: boolean; token?: string };
+      return body.active ? (body.token ?? "") : "";
+    } catch { return ""; }
+  };
 
   const tick = async () => {
     if (stopped) return;
     const watchInput = document.querySelector<HTMLInputElement>(".watch-share input");
     const cameraVideo = document.querySelector<HTMLVideoElement>(".camera-stage video");
     const stream = cameraVideo?.srcObject instanceof MediaStream ? cameraVideo.srcObject : null;
-    if (!watchInput?.value || !stream || stream.getVideoTracks().length === 0) return;
-    const token = new URL(watchInput.value).searchParams.get("token");
-    if (!token) return;
+    if (!watchInput?.value || !stream || stream.getVideoTracks().length === 0) {
+      if (activeToken) { activeToken = ""; closePeers(); }
+      return;
+    }
+    const token = await resolveToken(watchInput.value);
+    if (!token) {
+      if (activeToken) { activeToken = ""; closePeers(); }
+      return;
+    }
+    if (token !== activeToken) {
+      activeToken = token;
+      closePeers();
+    }
     try {
       const response = await fetch(`/api/live/rtc?token=${encodeURIComponent(token)}&publisher=1`, { cache: "no-store" });
-      if (!response.ok) return;
+      if (!response.ok) {
+        activeToken = "";
+        closePeers();
+        return;
+      }
       const body = await response.json() as { peers?: { viewerId: string; offerSdp: string }[] };
       for (const request of body.peers ?? []) {
         if (peers.has(request.viewerId)) continue;
@@ -133,19 +176,60 @@ function publisherBridge() {
 
   const timer = window.setInterval(() => void tick(), 850);
   void tick();
-  return () => { stopped = true; window.clearInterval(timer); peers.forEach((pc) => pc.close()); peers.clear(); };
+  return () => { stopped = true; window.clearInterval(timer); closePeers(); };
 }
 
 export function LiveRtcBridge() {
   useEffect(() => {
     let cleanup: (() => void) | undefined;
     let cancelled = false;
+
     if (location.pathname === "/watch") {
-      const token = new URLSearchParams(location.search).get("token") ?? "";
-      if (token) void viewerBridge(token).then((fn) => { if (cancelled) fn(); else cleanup = fn; }).catch(() => undefined);
+      const params = new URLSearchParams(location.search);
+      const directToken = params.get("token") ?? "";
+      const matchId = params.get("matchId") ?? "";
+      let currentToken = "";
+      let connectionCleanup: (() => void) | undefined;
+
+      const resolve = async () => {
+        if (cancelled) return;
+        let nextToken = directToken;
+        try {
+          if (matchId) {
+            const response = await fetch(`/api/live?matchId=${encodeURIComponent(matchId)}`, { cache: "no-store" });
+            if (!response.ok) nextToken = "";
+            else {
+              const body = await response.json() as { active?: boolean; token?: string };
+              nextToken = body.active ? (body.token ?? "") : "";
+            }
+          } else if (directToken) {
+            const response = await fetch(`/api/live?token=${encodeURIComponent(directToken)}`, { cache: "no-store" });
+            if (!response.ok) nextToken = "";
+            else {
+              const body = await response.json() as { active?: boolean };
+              nextToken = body.active ? directToken : "";
+            }
+          }
+        } catch { nextToken = ""; }
+
+        if (nextToken === currentToken) return;
+        connectionCleanup?.();
+        connectionCleanup = undefined;
+        currentToken = nextToken;
+        if (!nextToken) return;
+        void viewerBridge(nextToken).then((fn) => {
+          if (cancelled || currentToken !== nextToken) fn();
+          else connectionCleanup = fn;
+        }).catch(() => { if (currentToken === nextToken) currentToken = ""; });
+      };
+
+      const timer = window.setInterval(() => void resolve(), 1500);
+      void resolve();
+      cleanup = () => { window.clearInterval(timer); connectionCleanup?.(); };
     } else {
       cleanup = publisherBridge();
     }
+
     return () => { cancelled = true; cleanup?.(); };
   }, []);
   return null;
