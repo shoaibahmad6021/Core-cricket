@@ -1,0 +1,30 @@
+name: Fix Sponsor Control Syntax
+on:
+  push:
+    paths:
+      - '.github/trigger-fix-sponsor-control.txt'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix organizer sponsor permission expression
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p=Path('components/core-cricket-app.tsx')
+          s=p.read_text()
+          old='  const canControlSponsorOverlay = !userPreview && Boolean(activeMatch?.tournamentId && (user.isAdmin || data.tournaments.some((item) => item.id === activeMatch.tournamentId && (((item.createdByEmail ?? "").toLowerCase() === user.email.toLowerCase()) || ((item.createdByName ?? "").toLowerCase() === user.displayName.toLowerCase()))));\n'
+          new='  const canControlSponsorOverlay = !userPreview && Boolean(activeMatch?.tournamentId && (user.isAdmin || data.tournaments.some((item) => item.id === activeMatch.tournamentId && ((item.createdByEmail ?? "").toLowerCase() === user.email.toLowerCase() || (item.createdByName ?? "").toLowerCase() === user.displayName.toLowerCase()))));\n'
+          if old not in s: raise SystemExit("sponsor permission line not found")
+          p.write_text(s.replace(old,new,1))
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name "Core Cricket Update"
+          git config user.email "actions@github.com"
+          git add components/core-cricket-app.tsx
+          git commit -m "Fix manual sponsor overlay permission syntax" || exit 0
+          git push
