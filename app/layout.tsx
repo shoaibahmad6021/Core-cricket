@@ -21,6 +21,7 @@ import "./gta-falcons-splash.css";
 import "./cinematic-v2.css";
 import "./regular-colorful.css";
 import "./startup-impact-final.css";
+import "./startup-brand-reveal.css";
 import "./live-watch-qr.css";
 import "./live-rtc.css";
 
