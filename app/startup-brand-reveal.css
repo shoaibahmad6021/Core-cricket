@@ -1,0 +1,133 @@
+/* Core Cricket startup refinement — stadium, bounce, bigger branding and app reveal */
+.startup-splash.cinematic-launch,
+.cinematic-launch {
+  background:
+    linear-gradient(180deg,rgba(0,6,3,.05),rgba(0,10,5,.10) 48%,rgba(0,6,3,.28)),
+    url('/launch-ground.webp') center 38%/cover no-repeat !important;
+  animation: coreBrandRevealLife 7s linear forwards !important;
+}
+
+/* Keep the stadium bowl/seating readable rather than hiding it behind a dark wash. */
+.cinematic-launch::before {
+  background:
+    radial-gradient(ellipse at 50% 22%,rgba(255,255,235,.12),transparent 34%),
+    linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.05) 55%,rgba(0,0,0,.22)) !important;
+}
+
+/* Strong, visible floodlight beams behind the crest. */
+.cinematic-launch .launch-lights {
+  opacity: 1 !important;
+}
+.cinematic-launch .launch-lights i {
+  width: clamp(74px,10vw,150px) !important;
+  height: 112% !important;
+  opacity: .86 !important;
+  background: linear-gradient(180deg,rgba(255,255,245,.98),rgba(215,255,150,.32) 52%,transparent 86%) !important;
+  filter: blur(6px) brightness(1.35) !important;
+  animation: coreStadiumLights7 7s ease-in-out both !important;
+}
+
+/* Drop onto the pitch, bounce, rise into the centre, then grow through the screen. */
+.cinematic-launch .cinematic-logo {
+  left: 50% !important;
+  top: 69% !important;
+  width: clamp(250px,31vw,410px) !important;
+  max-width: 78vw !important;
+  transform-origin: 50% 52% !important;
+  animation: coreLogoBounceReveal7 7s cubic-bezier(.22,.72,.18,1) both !important;
+  will-change: transform, top, opacity, filter !important;
+}
+.cinematic-launch .cinematic-logo img {
+  filter: saturate(1.12) contrast(1.05) drop-shadow(0 18px 30px rgba(0,0,0,.56)) !important;
+  animation: none !important;
+}
+
+/* Larger startup copy. */
+.cinematic-launch > small {
+  z-index: 15 !important;
+  font-size: clamp(20px,3.1vw,36px) !important;
+  line-height: 1.15 !important;
+  font-weight: 900 !important;
+  letter-spacing: .08em !important;
+  text-shadow: 0 4px 18px rgba(0,0,0,.9),0 0 24px rgba(190,255,88,.38) !important;
+  opacity: 0;
+  animation: coreTagline7 7s ease both !important;
+}
+.cinematic-launch .creator-credit {
+  z-index: 15 !important;
+  font-size: clamp(16px,2.3vw,28px) !important;
+  line-height: 1.15 !important;
+  font-weight: 800 !important;
+  letter-spacing: .08em !important;
+  text-shadow: 0 4px 18px rgba(0,0,0,.9),0 0 20px rgba(255,255,255,.22) !important;
+  opacity: 0;
+  animation: coreCreator7 7s ease both !important;
+}
+
+@keyframes coreLogoBounceReveal7 {
+  0%   { top:69%; opacity:0; transform:translate(-50%,-50%) translateY(-120vh) scale(.56) rotate(-7deg); filter:brightness(.82); }
+  7%   { opacity:1; }
+  25%  { top:69%; transform:translate(-50%,-50%) translateY(-34vh) scale(.86) rotate(-2deg); }
+  31%  { top:69%; transform:translate(-50%,-50%) translateY(0) scale(1.16,.90) rotate(0deg); filter:brightness(1.75); }
+  35%  { top:69%; transform:translate(-50%,-50%) translateY(-82px) scale(.98,1.05) rotate(.5deg); }
+  39%  { top:69%; transform:translate(-50%,-50%) translateY(0) scale(1.08,.95) rotate(0deg); }
+  43%  { top:69%; transform:translate(-50%,-50%) translateY(-34px) scale(1.01,1.02); }
+  47%  { top:69%; transform:translate(-50%,-50%) translateY(0) scale(1); }
+  60%  { top:52%; transform:translate(-50%,-50%) scale(1.14); filter:brightness(1.18) saturate(1.08); }
+  82%  { top:50%; opacity:1; transform:translate(-50%,-50%) scale(1.22); filter:brightness(1.2) saturate(1.1) drop-shadow(0 0 18px rgba(190,255,88,.3)); }
+  90%  { top:50%; opacity:1; transform:translate(-50%,-50%) scale(1.30); }
+  97%  { top:50%; opacity:1; transform:translate(-50%,-50%) scale(7.2); filter:brightness(1.55) saturate(1.12); }
+  100% { top:50%; opacity:0; transform:translate(-50%,-50%) scale(11.5); filter:brightness(2); }
+}
+
+@keyframes coreTagline7 {
+  0%,49% { opacity:0; transform:translateY(22px) scale(.94); }
+  57%,84% { opacity:1; transform:translateY(0) scale(1); }
+  91%,100% { opacity:0; transform:translateY(-8px) scale(1.03); }
+}
+@keyframes coreCreator7 {
+  0%,52% { opacity:0; transform:translateY(18px); }
+  61%,84% { opacity:.98; transform:translateY(0); }
+  91%,100% { opacity:0; transform:translateY(-6px); }
+}
+@keyframes coreStadiumLights7 {
+  0% { opacity:.62; filter:blur(8px) brightness(1.02); }
+  20% { opacity:.86; filter:blur(6px) brightness(1.28); }
+  31% { opacity:1; filter:blur(4px) brightness(2); }
+  42% { opacity:.92; filter:blur(6px) brightness(1.45); }
+  60%,88% { opacity:.84; filter:blur(7px) brightness(1.25); }
+  100% { opacity:.18; filter:blur(12px) brightness(.9); }
+}
+@keyframes coreBrandRevealLife {
+  0%,91% { opacity:1; visibility:visible; }
+  96% { opacity:.78; visibility:visible; }
+  100% { opacity:0; visibility:hidden; pointer-events:none; }
+}
+
+@media(max-width:760px) {
+  .startup-splash.cinematic-launch,
+  .cinematic-launch { background-position:center 34% !important; }
+  .cinematic-launch .cinematic-logo { width:min(72vw,300px) !important; top:68% !important; }
+  .cinematic-launch > small { font-size:clamp(19px,6vw,28px) !important; }
+  .cinematic-launch .creator-credit { font-size:clamp(15px,4.6vw,22px) !important; }
+  @keyframes coreLogoBounceReveal7 {
+    0%   { top:68%; opacity:0; transform:translate(-50%,-50%) translateY(-110vh) scale(.55) rotate(-6deg); }
+    8%   { opacity:1; }
+    25%  { top:68%; transform:translate(-50%,-50%) translateY(-31vh) scale(.82) rotate(-2deg); }
+    31%  { top:68%; transform:translate(-50%,-50%) translateY(0) scale(1.14,.90); filter:brightness(1.7); }
+    35%  { top:68%; transform:translate(-50%,-50%) translateY(-68px) scale(.98,1.05); }
+    39%  { top:68%; transform:translate(-50%,-50%) translateY(0) scale(1.07,.95); }
+    43%  { top:68%; transform:translate(-50%,-50%) translateY(-25px) scale(1.01,1.02); }
+    47%  { top:68%; transform:translate(-50%,-50%) translateY(0) scale(1); }
+    60%  { top:51%; transform:translate(-50%,-50%) scale(1.10); }
+    82%  { top:48%; opacity:1; transform:translate(-50%,-50%) scale(1.18); }
+    90%  { top:48%; opacity:1; transform:translate(-50%,-50%) scale(1.26); }
+    97%  { top:48%; opacity:1; transform:translate(-50%,-50%) scale(7.8); filter:brightness(1.55); }
+    100% { top:48%; opacity:0; transform:translate(-50%,-50%) scale(12); filter:brightness(2); }
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  .cinematic-launch .cinematic-logo { animation:none !important; top:50% !important; opacity:1 !important; transform:translate(-50%,-50%) scale(1.12) !important; }
+  .cinematic-launch > small,.cinematic-launch .creator-credit { opacity:1 !important; animation:none !important; }
+}
