@@ -1,0 +1,40 @@
+name: Apply Multistream Live Studio Panel
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-multistream-panel.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate broadcast destinations panel
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p=Path('components/core-cricket-app.tsx')
+          s=p.read_text()
+          imp='import { BroadcastDestinations } from "@/components/broadcast-destinations";\n'
+          anchor='import QRCode from "qrcode";\n'
+          if imp not in s:
+              if anchor not in s: raise SystemExit('QRCode import anchor not found')
+              s=s.replace(anchor, anchor+imp, 1)
+          marker='<div className="studio-layout">'
+          panel='<BroadcastDestinations broadcasting={broadcasting} /><div className="studio-layout">'
+          if panel not in s:
+              if marker not in s: raise SystemExit('studio-layout marker not found')
+              s=s.replace(marker, panel, 1)
+          p.write_text(s)
+          PY
+      - name: Commit integration
+        run: |
+          git config user.name "Core Cricket Update"
+          git config user.email "actions@github.com"
+          git add components/core-cricket-app.tsx
+          git commit -m "Add YouTube and Facebook destinations to Live Studio" || exit 0
+          git push
