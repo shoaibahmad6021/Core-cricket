@@ -14,3 +14,9 @@
 .sponsor-live-copy p{margin:3px 0 0;color:#c8d6cc;font-size:11px;line-height:1.35}
 @keyframes sponsor-sheen{0%{transform:translateX(-120%)}100%{transform:translateX(130%)}}
 @media(max-width:620px){.live-sponsor-overlay{bottom:104px;width:94%}.sponsor-live-card{grid-template-columns:78px minmax(0,1fr);gap:10px;padding:10px 12px}.sponsor-live-logo{width:72px;height:52px}.sponsor-live-copy strong{font-size:18px}.sponsor-live-copy p{font-size:9px}.sponsor-live-kicker{font-size:7px;margin-left:10px;padding:4px 9px}}
+
+.sponsor-control-card{border-color:rgba(183,243,75,.3);background:linear-gradient(145deg,rgba(183,243,75,.06),transparent 55%)}
+.sponsor-control-card button:disabled{opacity:.42;cursor:not-allowed}
+.sponsor-control-card small{display:block;margin-top:8px;color:#91a79a;font-size:10px}
+.live-sponsor-overlay.sponsor-visible{animation:manual-sponsor-eight 8s ease both}
+@keyframes manual-sponsor-eight{0%{opacity:0;transform:translate(-50%,24px) scale(.96)}7%,88%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,10px) scale(.985)}}

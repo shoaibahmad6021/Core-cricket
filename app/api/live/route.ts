@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { deliveries, liveSessions, matches, players, scoringHandoffs, teams, tournamentScorers, tournamentSponsors, tournaments } from "@/db/schema";
 import { getChatGPTUser } from "@/app/chatgpt-auth";
@@ -27,6 +27,20 @@ async function canBroadcast(matchId: number, handoffToken?: string) {
   return roster.some((p) => [match.teamAId, match.teamBId].includes(p.teamId ?? 0) && p.name.trim().toLowerCase() === name && ["captain", "team admin"].includes((p.memberRole || "").toLowerCase()));
 }
 
+async function canControlSponsors(matchId: number) {
+  const user = await getChatGPTUser();
+  if (!user) return false;
+  if (isCoreCricketAdmin(user)) return true;
+  const db = getDb();
+  const [match] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
+  if (!match?.tournamentId) return false;
+  const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, match.tournamentId)).limit(1);
+  if (!tournament) return false;
+  const name = (user.fullName || user.displayName).trim().toLowerCase();
+  const email = user.email.trim().toLowerCase();
+  return tournament.createdByEmail.trim().toLowerCase() === email || tournament.createdByName.trim().toLowerCase() === name;
+}
+
 export async function POST(request: Request) {
   const { matchId, handoffToken } = await request.json() as { matchId?: number; handoffToken?: string };
   if (!matchId) return Response.json({ error: "Choose a match" }, { status: 400 });
@@ -37,6 +51,23 @@ export async function POST(request: Request) {
   await db.insert(liveSessions).values({ token, publishKey, matchId, active: true });
   await db.update(matches).set({ streaming: true }).where(eq(matches.id, matchId));
   return Response.json({ token, publishKey });
+}
+
+export async function PATCH(request: Request) {
+  const { matchId } = await request.json() as { matchId?: number };
+  if (!matchId) return Response.json({ error: "Choose a match" }, { status: 400 });
+  if (!(await canControlSponsors(matchId))) return Response.json({ error: "Only a site admin or tournament organizer can show sponsor overlays." }, { status: 403 });
+  const db = getDb();
+  const [match] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);
+  if (!match?.tournamentId) return Response.json({ error: "Sponsor overlays are available for tournament matches." }, { status: 400 });
+  const sponsorRows = await db.select().from(tournamentSponsors).where(eq(tournamentSponsors.tournamentId, match.tournamentId)).orderBy(asc(tournamentSponsors.id));
+  if (!sponsorRows.length) return Response.json({ error: "Add at least one tournament sponsor first." }, { status: 400 });
+  const [session] = await db.select().from(liveSessions).where(and(eq(liveSessions.matchId, matchId), eq(liveSessions.active, true))).orderBy(desc(liveSessions.id)).limit(1);
+  if (!session) return Response.json({ error: "Start the live broadcast before showing a sponsor." }, { status: 400 });
+  const nextIndex = ((session.sponsorIndex ?? -1) + 1) % sponsorRows.length;
+  const overlayUntil = new Date(Date.now() + 8000).toISOString();
+  await db.update(liveSessions).set({ sponsorIndex: nextIndex, sponsorOverlayUntil: overlayUntil }).where(eq(liveSessions.id, session.id));
+  return Response.json({ sponsor: sponsorRows[nextIndex], overlayUntil, durationMs: 8000 });
 }
 
 export async function DELETE(request: Request) {
@@ -71,7 +102,8 @@ export async function GET(request: Request) {
     db.select().from(deliveries).where(eq(deliveries.matchId, match.id)),
   ]);
   const [tournament] = match.tournamentId ? await db.select().from(tournaments).where(eq(tournaments.id, match.tournamentId)).limit(1) : [];
-  const sponsorRows = match.tournamentId ? await db.select().from(tournamentSponsors).where(eq(tournamentSponsors.tournamentId, match.tournamentId)) : [];
+  const sponsorRows = match.tournamentId ? await db.select().from(tournamentSponsors).where(eq(tournamentSponsors.tournamentId, match.tournamentId)).orderBy(asc(tournamentSponsors.id)) : [];
+  const sponsorOverlay = session.sponsorOverlayUntil && Date.parse(session.sponsorOverlayUntil) > Date.now() && session.sponsorIndex >= 0 && sponsorRows.length ? sponsorRows[session.sponsorIndex % sponsorRows.length] : null;
   const currentPlayerIds = new Set([match.strikerId, match.nonStrikerId, match.bowlerId].filter((id): id is number => typeof id === "number"));
   return Response.json({
     token: session.token,
@@ -79,6 +111,7 @@ export async function GET(request: Request) {
     match,
     tournament,
     sponsors: sponsorRows,
+    sponsorOverlay,
     teams: teamRows.filter((team) => team.id === match.teamAId || team.id === match.teamBId),
     players: playerRows.filter((player) => currentPlayerIds.has(player.id)),
     deliveries: deliveryRows,

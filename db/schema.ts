@@ -77,7 +77,7 @@ export const tournamentScorers = pgTable("tournament_scorers", {
 });
 
 export const liveSessions = pgTable("live_sessions", {
-  id: serial("id").primaryKey(), token: text("token").notNull().unique(), publishKey: text("publish_key").notNull().default(""), matchId: integer("match_id").notNull().references(() => matches.id), frameUrl: text("frame_url"), active: boolean("active").notNull().default(true), createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  id: serial("id").primaryKey(), token: text("token").notNull().unique(), publishKey: text("publish_key").notNull().default(""), matchId: integer("match_id").notNull().references(() => matches.id), frameUrl: text("frame_url"), active: boolean("active").notNull().default(true), sponsorIndex: integer("sponsor_index").notNull().default(-1), sponsorOverlayUntil: text("sponsor_overlay_until"), createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const scoringHandoffs = pgTable("scoring_handoffs", {
