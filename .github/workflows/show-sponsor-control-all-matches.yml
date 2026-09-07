@@ -1,0 +1,34 @@
+name: Show Sponsor Control All Matches
+on:
+  push:
+    paths:
+      - '.github/workflows/show-sponsor-control-all-matches.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Update Live Studio sponsor control
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('components/core-cricket-app.tsx')
+          s = p.read_text()
+          old = '''{match?.tournamentId && <div className="card sponsor-control-card"><span>SPONSOR OVERLAY</span><h3>Manual sponsor graphic</h3><p>{sponsorCount ? `${sponsorCount} sponsor${sponsorCount === 1 ? "" : "s"} ready. Each press shows the next sponsor for 8 seconds.` : "Add sponsor logos in the tournament first."}</p><button className="secondary-button" disabled={!canControlSponsors || !broadcasting || sponsorCount === 0} onClick={onSponsor}>Show Sponsor</button><small>{!canControlSponsors ? "Only the site admin or tournament organizer can trigger sponsor overlays." : !broadcasting ? "Start the live broadcast first." : sponsorCount === 0 ? "No tournament sponsors available." : "Press again for the next sponsor."}</small></div>}'''
+          new = '''<div className="card sponsor-control-card"><span>SPONSOR OVERLAY</span><h3>Manual sponsor graphic</h3><p>{sponsorCount ? `${sponsorCount} sponsor${sponsorCount === 1 ? "" : "s"} ready. Each press shows the next sponsor for 8 seconds.` : match?.tournamentId ? "Add sponsor logos in the tournament first." : "Sponsor overlay controls stay available for friendly live broadcasts too."}</p><button className="secondary-button" disabled={!canControlSponsors || !broadcasting || sponsorCount === 0} onClick={onSponsor}>Show Sponsor</button><small>{!match?.tournamentId ? "No sponsor content is linked to this friendly match yet." : !canControlSponsors ? "Only the site admin or tournament organizer can trigger sponsor overlays." : !broadcasting ? "Start the live broadcast first." : sponsorCount === 0 ? "No tournament sponsors available." : "Press again for the next sponsor."}</small></div>'''
+          if old not in s:
+              raise SystemExit('Expected sponsor card block not found; aborting without changes')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Commit update and remove one-off workflow
+        run: |
+          git config user.name "Core Cricket Update"
+          git config user.email "actions@github.com"
+          git rm .github/workflows/show-sponsor-control-all-matches.yml
+          git add components/core-cricket-app.tsx
+          git commit -m "Show sponsor overlay control for all live matches"
+          git push
