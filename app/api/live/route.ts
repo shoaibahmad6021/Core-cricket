@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { deliveries, liveSessions, matches, players, scoringHandoffs, teams, tournamentScorers, tournaments } from "@/db/schema";
+import { deliveries, liveSessions, matches, players, scoringHandoffs, teams, tournamentScorers, tournamentSponsors, tournaments } from "@/db/schema";
 import { getChatGPTUser } from "@/app/chatgpt-auth";
 import { isCoreCricketAdmin } from "@/app/admin-auth";
 
@@ -71,12 +71,14 @@ export async function GET(request: Request) {
     db.select().from(deliveries).where(eq(deliveries.matchId, match.id)),
   ]);
   const [tournament] = match.tournamentId ? await db.select().from(tournaments).where(eq(tournaments.id, match.tournamentId)).limit(1) : [];
+  const sponsorRows = match.tournamentId ? await db.select().from(tournamentSponsors).where(eq(tournamentSponsors.tournamentId, match.tournamentId)) : [];
   const currentPlayerIds = new Set([match.strikerId, match.nonStrikerId, match.bowlerId].filter((id): id is number => typeof id === "number"));
   return Response.json({
     token: session.token,
     active: session.active,
     match,
     tournament,
+    sponsors: sponsorRows,
     teams: teamRows.filter((team) => team.id === match.teamAId || team.id === match.teamBId),
     players: playerRows.filter((player) => currentPlayerIds.has(player.id)),
     deliveries: deliveryRows,
