@@ -1,0 +1,106 @@
+name: Apply Manual Sponsor Overlay
+
+on:
+  push:
+    paths:
+      - '.github/trigger-manual-sponsor-overlay.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply manual sponsor overlay control
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import json
+
+          # 1) Schema: store which sponsor is currently selected and how long it should show.
+          p=Path('db/schema.ts'); s=p.read_text()
+          old='id: serial("id").primaryKey(), token: text("token").notNull().unique(), publishKey: text("publish_key").notNull().default(""), matchId: integer("match_id").notNull().references(() => matches.id), frameUrl: text("frame_url"), active: boolean("active").notNull().default(true), createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),'
+          new='id: serial("id").primaryKey(), token: text("token").notNull().unique(), publishKey: text("publish_key").notNull().default(""), matchId: integer("match_id").notNull().references(() => matches.id), frameUrl: text("frame_url"), active: boolean("active").notNull().default(true), sponsorIndex: integer("sponsor_index").notNull().default(-1), sponsorOverlayUntil: text("sponsor_overlay_until"), createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),'
+          if old not in s: raise SystemExit('liveSessions schema pattern not found')
+          p.write_text(s.replace(old,new,1))
+
+          # 2) Production PostgreSQL migration (correct migration tree).
+          Path('drizzle-postgres/0002_manual_sponsor_overlay.sql').write_text('''ALTER TABLE "live_sessions" ADD COLUMN IF NOT EXISTS "sponsor_index" integer DEFAULT -1 NOT NULL;\nALTER TABLE "live_sessions" ADD COLUMN IF NOT EXISTS "sponsor_overlay_until" text;\n''')
+          jp=Path('drizzle-postgres/meta/_journal.json'); j=json.loads(jp.read_text())
+          if not any(e.get('tag')=='0002_manual_sponsor_overlay' for e in j['entries']):
+              j['entries'].append({"idx":2,"version":"7","when":1788791000000,"tag":"0002_manual_sponsor_overlay","breakpoints":True})
+          jp.write_text(json.dumps(j,indent=2)+"\n")
+
+          # 3) Live API: organizer/admin triggers next sponsor for 8 seconds.
+          p=Path('app/api/live/route.ts'); s=p.read_text()
+          s=s.replace('import { and, desc, eq } from "drizzle-orm";','import { and, asc, desc, eq } from "drizzle-orm";',1)
+          marker='export async function POST(request: Request) {'
+          helper='''async function canControlSponsors(matchId: number) {\n  const user = await getChatGPTUser();\n  if (!user) return false;\n  if (isCoreCricketAdmin(user)) return true;\n  const db = getDb();\n  const [match] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);\n  if (!match?.tournamentId) return false;\n  const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, match.tournamentId)).limit(1);\n  if (!tournament) return false;\n  const name = (user.fullName || user.displayName).trim().toLowerCase();\n  const email = user.email.trim().toLowerCase();\n  return tournament.createdByEmail.trim().toLowerCase() === email || tournament.createdByName.trim().toLowerCase() === name;\n}\n\n'''
+          if helper not in s:
+              if marker not in s: raise SystemExit('live POST marker not found')
+              s=s.replace(marker,helper+marker,1)
+          delete_marker='export async function DELETE(request: Request) {'
+          patch='''export async function PATCH(request: Request) {\n  const { matchId } = await request.json() as { matchId?: number };\n  if (!matchId) return Response.json({ error: "Choose a match" }, { status: 400 });\n  if (!(await canControlSponsors(matchId))) return Response.json({ error: "Only a site admin or tournament organizer can show sponsor overlays." }, { status: 403 });\n  const db = getDb();\n  const [match] = await db.select().from(matches).where(eq(matches.id, matchId)).limit(1);\n  if (!match?.tournamentId) return Response.json({ error: "Sponsor overlays are available for tournament matches." }, { status: 400 });\n  const sponsorRows = await db.select().from(tournamentSponsors).where(eq(tournamentSponsors.tournamentId, match.tournamentId)).orderBy(asc(tournamentSponsors.id));\n  if (!sponsorRows.length) return Response.json({ error: "Add at least one tournament sponsor first." }, { status: 400 });\n  const [session] = await db.select().from(liveSessions).where(and(eq(liveSessions.matchId, matchId), eq(liveSessions.active, true))).orderBy(desc(liveSessions.id)).limit(1);\n  if (!session) return Response.json({ error: "Start the live broadcast before showing a sponsor." }, { status: 400 });\n  const nextIndex = ((session.sponsorIndex ?? -1) + 1) % sponsorRows.length;\n  const overlayUntil = new Date(Date.now() + 8000).toISOString();\n  await db.update(liveSessions).set({ sponsorIndex: nextIndex, sponsorOverlayUntil: overlayUntil }).where(eq(liveSessions.id, session.id));\n  return Response.json({ sponsor: sponsorRows[nextIndex], overlayUntil, durationMs: 8000 });\n}\n\n'''
+          if patch not in s:
+              if delete_marker not in s: raise SystemExit('live DELETE marker not found')
+              s=s.replace(delete_marker,patch+delete_marker,1)
+          old='''  const sponsorRows = match.tournamentId ? await db.select().from(tournamentSponsors).where(eq(tournamentSponsors.tournamentId, match.tournamentId)) : [];\n  const currentPlayerIds'''
+          new='''  const sponsorRows = match.tournamentId ? await db.select().from(tournamentSponsors).where(eq(tournamentSponsors.tournamentId, match.tournamentId)).orderBy(asc(tournamentSponsors.id)) : [];\n  const sponsorOverlay = session.sponsorOverlayUntil && Date.parse(session.sponsorOverlayUntil) > Date.now() && session.sponsorIndex >= 0 && sponsorRows.length ? sponsorRows[session.sponsorIndex % sponsorRows.length] : null;\n  const currentPlayerIds'''
+          if old not in s: raise SystemExit('sponsorRows GET pattern not found')
+          s=s.replace(old,new,1)
+          s=s.replace('    sponsors: sponsorRows,\n    teams:', '    sponsors: sponsorRows,\n    sponsorOverlay,\n    teams:',1)
+          p.write_text(s)
+
+          # 4) Viewer: remove automatic rotation; display only server-triggered overlay.
+          p=Path('components/live-viewer.tsx'); s=p.read_text()
+          s=s.replace('import { useEffect, useMemo, useState } from "react";','import { useEffect, useState } from "react";',1)
+          s=s.replace('  sponsors?: LiveSponsor[];\n', '  sponsors?: LiveSponsor[];\n  sponsorOverlay?: LiveSponsor | null;\n',1)
+          s=s.replace('  const [sponsorIndex, setSponsorIndex] = useState(0);\n  const [sponsorVisible, setSponsorVisible] = useState(false);\n','',1)
+          start='  const sponsors = useMemo(() => (data?.sponsors ?? []).filter((sponsor) => sponsor.name || sponsor.logoUrl), [data?.sponsors]);\n'
+          end='\n  if (!data) return <main className="viewer-page"><p>Connecting to Core Cricket Live…</p></main>;'
+          i=s.find(start); j=s.find(end)
+          if i==-1 or j==-1 or j<i: raise SystemExit('automatic sponsor effect block not found')
+          s=s[:i]+s[j+1:]
+          s=s.replace('  const activeSponsor = sponsors.length ? sponsors[sponsorIndex % sponsors.length] : undefined;','  const activeSponsor = data.sponsorOverlay ?? undefined;',1)
+          s=s.replace('className={`live-sponsor-overlay${sponsorVisible ? " sponsor-visible" : ""}`}', 'className="live-sponsor-overlay sponsor-visible"',1)
+          s=s.replace('Camera, score and sponsor graphics refresh automatically','Camera and score refresh automatically · Sponsor graphics are controlled by the organizer',1)
+          p.write_text(s)
+
+          # 5) App UI: organizer/admin only manual Show Sponsor button.
+          p=Path('components/core-cricket-app.tsx'); s=p.read_text()
+          old='  const canBroadcastActiveMatch = !userPreview && Boolean(activeMatch && (canScoreActiveMatch || canManageTeam(activeMatch.teamAId) || canManageTeam(activeMatch.teamBId)));\n'
+          new=old+'  const canControlSponsorOverlay = !userPreview && Boolean(activeMatch?.tournamentId && (user.isAdmin || data.tournaments.some((item) => item.id === activeMatch.tournamentId && (((item.createdByEmail ?? "").toLowerCase() === user.email.toLowerCase()) || ((item.createdByName ?? "").toLowerCase() === user.displayName.toLowerCase()))));\n'
+          if old not in s: raise SystemExit('canBroadcastActiveMatch pattern not found')
+          s=s.replace(old,new,1)
+          old='  async function stopLive() { if (frameTimer.current) window.clearInterval(frameTimer.current); frameTimer.current = null; const credentials = liveCredentials.current; liveCredentials.current = null; setBroadcasting(false); if (credentials) await fetch("/api/live", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify(credentials) }); setNotice("Live camera broadcast stopped."); }\n'
+          new=old+'  async function showSponsorOverlay() { if (!activeMatch) return; try { const response = await fetch("/api/live", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ matchId: activeMatch.id }) }); const body = await response.json() as { sponsor?: { name?: string }; error?: string }; if (!response.ok) throw new Error(body.error || "Unable to show sponsor"); setNotice(`${body.sponsor?.name || "Sponsor"} is now on the live broadcast for 8 seconds.`); } catch (error) { setNotice(error instanceof Error ? error.message : "Unable to show sponsor"); } }\n'
+          if old not in s: raise SystemExit('stopLive pattern not found')
+          s=s.replace(old,new,1)
+          old='{view === "live" && <LiveStudio authorized={canBroadcastActiveMatch} canScore={canScoreActiveMatch} match={activeMatch} battingTeam={battingTeam} bowlingTeam={bowlingTeam} videoRef={videoRef} cameraOn={cameraOn} broadcasting={broadcasting} watchLink={watchLink} onCamera={enableCamera} onScoreDevice={() => go("score")} onBroadcast={() => broadcasting ? void stopLive() : void startLive()} />}'
+          new='{view === "live" && <LiveStudio authorized={canBroadcastActiveMatch} canScore={canScoreActiveMatch} canControlSponsors={canControlSponsorOverlay} sponsorCount={(data.tournamentSponsors ?? []).filter((item) => item.tournamentId === activeMatch?.tournamentId).length} match={activeMatch} battingTeam={battingTeam} bowlingTeam={bowlingTeam} videoRef={videoRef} cameraOn={cameraOn} broadcasting={broadcasting} watchLink={watchLink} onCamera={enableCamera} onScoreDevice={() => go("score")} onBroadcast={() => broadcasting ? void stopLive() : void startLive()} onSponsor={() => void showSponsorOverlay()} />}'
+          if old not in s: raise SystemExit('LiveStudio call pattern not found')
+          s=s.replace(old,new,1)
+          old='function LiveStudio({ authorized, canScore, match, battingTeam, bowlingTeam, videoRef, cameraOn, broadcasting, watchLink, onCamera, onScoreDevice, onBroadcast }: { authorized: boolean; canScore: boolean; match?: Match; battingTeam?: Team; bowlingTeam?: Team; videoRef: React.RefObject<HTMLVideoElement | null>; cameraOn: boolean; broadcasting: boolean; watchLink: string; onCamera: () => void; onScoreDevice: () => void; onBroadcast: () => void }) {'
+          new='function LiveStudio({ authorized, canScore, canControlSponsors, sponsorCount, match, battingTeam, bowlingTeam, videoRef, cameraOn, broadcasting, watchLink, onCamera, onScoreDevice, onBroadcast, onSponsor }: { authorized: boolean; canScore: boolean; canControlSponsors: boolean; sponsorCount: number; match?: Match; battingTeam?: Team; bowlingTeam?: Team; videoRef: React.RefObject<HTMLVideoElement | null>; cameraOn: boolean; broadcasting: boolean; watchLink: string; onCamera: () => void; onScoreDevice: () => void; onBroadcast: () => void; onSponsor: () => void }) {'
+          if old not in s: raise SystemExit('LiveStudio signature not found')
+          s=s.replace(old,new,1)
+          needle='</div><div className="card broadcast-card"><span>LIVE BROADCAST</span>'
+          insert='''</div>{canControlSponsors && <div className="card sponsor-control-card"><span>SPONSOR OVERLAY</span><h3>Manual sponsor graphic</h3><p>{sponsorCount ? `${sponsorCount} sponsor${sponsorCount === 1 ? "" : "s"} ready. Each press shows the next sponsor for 8 seconds.` : "Add sponsor logos in the tournament first."}</p><button className="secondary-button" disabled={!broadcasting || sponsorCount === 0} onClick={onSponsor}>Show Sponsor</button><small>{!broadcasting ? "Start the live broadcast first." : sponsorCount === 0 ? "No tournament sponsors available." : "Press again for the next sponsor."}</small></div>}<div className="card broadcast-card"><span>LIVE BROADCAST</span>'''
+          if needle not in s: raise SystemExit('LiveStudio broadcast card insertion point not found')
+          s=s.replace(needle,insert,1)
+          p.write_text(s)
+
+          # 6) Styling for the control button/card and 8-second overlay feel.
+          p=Path('app/live-camera.css'); s=p.read_text()
+          s+='''\n.sponsor-control-card{border-color:rgba(183,243,75,.3);background:linear-gradient(145deg,rgba(183,243,75,.06),transparent 55%)}\n.sponsor-control-card button:disabled{opacity:.42;cursor:not-allowed}\n.sponsor-control-card small{display:block;margin-top:8px;color:#91a79a;font-size:10px}\n.live-sponsor-overlay.sponsor-visible{animation:manual-sponsor-eight 8s ease both}\n@keyframes manual-sponsor-eight{0%{opacity:0;transform:translate(-50%,24px) scale(.96)}7%,88%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,10px) scale(.985)}}\n'''
+          p.write_text(s)
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name "Core Cricket Update"
+          git config user.email "actions@github.com"
+          git add db/schema.ts drizzle-postgres app/api/live/route.ts components/live-viewer.tsx components/core-cricket-app.tsx app/live-camera.css
+          git commit -m "Add manual rotating sponsor overlay control" || exit 0
+          git push
