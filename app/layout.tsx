@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { LiveWatchQrEnhancer } from "@/components/live-watch-qr-enhancer";
+import { LiveFrameRecovery } from "@/components/live-frame-recovery";
 import "./globals.css";
 import "./storage-live.css";
 import "./lineup.css";
@@ -20,6 +21,7 @@ import "./cinematic-v2.css";
 import "./regular-colorful.css";
 import "./startup-impact-final.css";
 import "./live-watch-qr.css";
+import "./live-frame-recovery.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://core-cricket.vercel.app"),
@@ -58,7 +60,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased"><LiveWatchQrEnhancer />{children}</body>
+      <body className="antialiased"><LiveWatchQrEnhancer /><LiveFrameRecovery />{children}</body>
     </html>
   );
 }
