@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { LiveWatchQrEnhancer } from "@/components/live-watch-qr-enhancer";
 import { LiveRtcBridge } from "@/components/live-rtc-bridge";
 import { StableLiveWatchLink } from "@/components/stable-live-watch-link";
+import { LiveReplayEnhancer } from "@/components/live-replay-enhancer";
+import { LiveReplayViewer } from "@/components/live-replay-viewer";
 import "./globals.css";
 import "./storage-live.css";
 import "./lineup.css";
@@ -24,6 +26,7 @@ import "./startup-impact-final.css";
 import "./startup-brand-reveal.css";
 import "./live-watch-qr.css";
 import "./live-rtc.css";
+import "./live-replay.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://core-cricket.vercel.app"),
@@ -62,7 +65,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased"><StableLiveWatchLink /><LiveWatchQrEnhancer /><LiveRtcBridge />{children}</body>
+      <body className="antialiased"><StableLiveWatchLink /><LiveWatchQrEnhancer /><LiveRtcBridge /><LiveReplayEnhancer /><LiveReplayViewer />{children}</body>
     </html>
   );
 }
