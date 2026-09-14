@@ -29,6 +29,13 @@
       "when": 1788795200000,
       "tag": "0003_live_rtc_peers",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789384500000,
+      "tag": "0004_live_replay",
+      "breakpoints": true
     }
   ]
 }
