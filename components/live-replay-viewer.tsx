@@ -23,6 +23,12 @@ export function LiveReplayViewer() {
     const clearReplay = () => {
       if (fallbackTimer) window.clearTimeout(fallbackTimer);
       fallbackTimer = null;
+      const replayVideo = activeOverlay?.querySelector<HTMLVideoElement>("video");
+      if (replayVideo) {
+        replayVideo.pause();
+        replayVideo.removeAttribute("src");
+        replayVideo.load();
+      }
       activeOverlay?.remove();
       activeOverlay = null;
       const rtc = document.querySelector<HTMLVideoElement>(".rtc-live-video");
@@ -36,7 +42,7 @@ export function LiveReplayViewer() {
       if (!host) return;
       const overlay = document.createElement("div");
       overlay.className = "instant-replay-overlay";
-      overlay.innerHTML = '<div class="instant-replay-label"><b>↻ REPLAY</b><span>CORE CRICKET</span></div><video class="instant-replay-video" playsinline></video><button class="instant-replay-sound" hidden>Tap for replay sound</button><div class="instant-replay-return">LIVE feed continues in background</div>';
+      overlay.innerHTML = '<div class="instant-replay-label"><b>↻ REPLAY</b><span>CORE CRICKET</span></div><video class="instant-replay-video" playsinline preload="auto"></video><button class="instant-replay-sound" hidden>🔊 Tap for replay sound</button><div class="instant-replay-return">● LIVE continues in background</div>';
       host.appendChild(overlay);
       activeOverlay = overlay;
       const video = overlay.querySelector<HTMLVideoElement>("video")!;
@@ -47,12 +53,37 @@ export function LiveReplayViewer() {
       video.controls = false;
       video.muted = false;
       video.onended = clearReplay;
-      video.onerror = clearReplay;
-      const tryPlay = () => void video.play().catch(() => { soundButton.hidden = false; });
-      video.oncanplay = tryPlay;
-      soundButton.onclick = () => { video.muted = false; void video.play(); soundButton.hidden = true; };
-      tryPlay();
-      fallbackTimer = window.setTimeout(clearReplay, Math.max(6000, (replay.durationMs ?? 10000) + 4000));
+      video.onerror = () => {
+        const label = overlay.querySelector<HTMLElement>(".instant-replay-return");
+        if (label) label.textContent = "Replay could not load · returning to LIVE";
+        window.setTimeout(clearReplay, 1500);
+      };
+
+      const tryPlay = async () => {
+        try {
+          video.muted = false;
+          await video.play();
+          soundButton.hidden = true;
+        } catch {
+          // Mobile browsers often block autoplay with audio. Keep the replay visible
+          // by starting muted, then let the viewer opt into commentary audio.
+          try {
+            video.muted = true;
+            await video.play();
+            soundButton.hidden = false;
+          } catch {
+            soundButton.hidden = false;
+          }
+        }
+      };
+      video.oncanplay = () => void tryPlay();
+      soundButton.onclick = () => {
+        video.muted = false;
+        void video.play().catch(() => undefined);
+        soundButton.hidden = true;
+      };
+      void tryPlay();
+      fallbackTimer = window.setTimeout(clearReplay, Math.max(6000, (replay.durationMs ?? 10000) + 5000));
     };
 
     const poll = async () => {
@@ -70,7 +101,7 @@ export function LiveReplayViewer() {
       } catch { /* keep live stream visible */ }
     };
 
-    const timer = window.setInterval(() => void poll(), 800);
+    const timer = window.setInterval(() => void poll(), 700);
     void poll();
     return () => {
       stopped = true;
