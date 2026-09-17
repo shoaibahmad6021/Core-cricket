@@ -38,6 +38,6 @@
     "typescript": "5.9.3"
   },
   "type": "module",
-  "displayName": "Core Cricket"
+  "displayName": "Core Cricket",
+  "deploymentNote": "live-studio-touch-freeze-fix"
 }
-
