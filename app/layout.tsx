@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { LiveWatchQrEnhancer } from "@/components/live-watch-qr-enhancer";
 import { LiveRtcBridge } from "@/components/live-rtc-bridge";
 import { StableLiveWatchLink } from "@/components/stable-live-watch-link";
-import { LiveReplayEnhancer } from "@/components/live-replay-enhancer";
 import { LiveReplayViewer } from "@/components/live-replay-viewer";
 import { LiveBoundaryViewer } from "@/components/live-boundary-viewer";
 import "./globals.css";
@@ -67,7 +66,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased"><StableLiveWatchLink /><LiveWatchQrEnhancer /><LiveRtcBridge /><LiveReplayEnhancer /><LiveReplayViewer /><LiveBoundaryViewer />{children}</body>
+      <body className="antialiased"><StableLiveWatchLink /><LiveWatchQrEnhancer /><LiveRtcBridge /><LiveReplayViewer /><LiveBoundaryViewer />{children}</body>
     </html>
   );
 }
