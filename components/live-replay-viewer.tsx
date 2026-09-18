@@ -76,6 +76,12 @@ export function LiveReplayViewer() {
           }
         }
       };
+      video.onloadedmetadata = () => {
+        const requested = Math.max(3, Math.round((replay.durationMs ?? 10000) / 1000));
+        if (Number.isFinite(video.duration) && video.duration > requested + 0.25) {
+          video.currentTime = Math.max(0, video.duration - requested);
+        }
+      };
       video.oncanplay = () => void tryPlay();
       soundButton.onclick = () => {
         video.muted = false;
